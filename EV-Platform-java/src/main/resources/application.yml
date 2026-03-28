@@ -1,0 +1,19 @@
+server:
+  port: 8080 # 服务启动端口
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 注意修改时区和编码，确保中文字符不乱码
+    url: jdbc:mysql://localhost:3306/new_energy_vehicle?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root        # 替换为你的 MySQL 用户名
+    password: 123456 # 替换为你的 MySQL 密码
+
+mybatis-plus:
+  # 如果后续有手写的复杂 SQL，XML 文件会放在 resources/mapper 下
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    # 开启驼峰命名自动转换 (如数据库的 create_time 会自动映射为 Java 的 createTime)
+    map-underscore-to-camel-case: true
+    # 开发阶段开启控制台 SQL 打印，极大方便排错
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
