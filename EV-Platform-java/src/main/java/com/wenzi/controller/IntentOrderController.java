@@ -5,6 +5,7 @@ import cn.hutool.jwt.JWTUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wenzi.common.Result;
 import com.wenzi.dto.IntentQueryDTO;
+import com.wenzi.dto.IntentStatsDTO;
 import com.wenzi.dto.IntentSubmitDTO;
 import com.wenzi.entity.IntentOrder;
 import com.wenzi.service.IIntentOrderService;
@@ -46,12 +47,50 @@ public class IntentOrderController {
     }
 
     /**
+     * 分页查询当前登录用户的线索列表
+     */
+    @PostMapping("/my-records")
+    public Result<Page<IntentOrder>> myRecords(@RequestBody IntentQueryDTO dto, HttpServletRequest request) {
+        // 1. 从请求头中获取 token
+        String token = request.getHeader("token");
+
+        // 2. 校验 token 是否合法（未登录或伪造）
+        if (StrUtil.isBlank(token) || !JwtUtils.verifyToken(token)) {
+            return Result.error("请先登录后再查看预约记录！");
+        }
+
+        try {
+            // 3. 解析 Token 获取 userId
+            Long userId = Long.valueOf(JWTUtil.parseToken(token).getPayload("id").toString());
+            dto.setUserId(userId);
+
+            // 4. 调用业务逻辑
+            Page<IntentOrder> pageResult = intentOrderService.pageQuery(dto);
+            return Result.success(pageResult);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取预约记录失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 分页查询线索列表
      */
     @PostMapping("/page")
     public Result<Page<IntentOrder>> pageQuery(@RequestBody IntentQueryDTO dto) {
         Page<IntentOrder> pageResult = intentOrderService.pageQuery(dto);
         return Result.success(pageResult);
+    }
+
+    /**
+     * 获取意向订单统计数据
+     * 访问路径: GET http://localhost:8080/intent/stats
+     */
+    @GetMapping("/stats")
+    public Result<IntentStatsDTO> getIntentStats() {
+        IntentStatsDTO stats = intentOrderService.getIntentStatistics();
+        return Result.success(stats);
     }
 
     /**

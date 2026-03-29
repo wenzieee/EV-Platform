@@ -12,7 +12,14 @@ import com.wenzi.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wenzi.utils.JwtUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import com.wenzi.dto.UserStatsDTO;
 
 /**
  * <p>
@@ -89,4 +96,68 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 5. 执行查询
         return this.page(page, wrapper);
     }
+
+    @Override
+    public UserStatsDTO getUserStatistics() {
+        // 1. 获取所有用户
+        List<User> users = this.list();
+
+        // 2. 统计按角色分类的数据
+        List<UserStatsDTO.RoleStats> roleStatsList = users.stream()
+                .filter(user -> user.getRole() != null)
+                .collect(Collectors.groupingBy(User::getRole, Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> {
+                    UserStatsDTO.RoleStats roleStats = new UserStatsDTO.RoleStats();
+                    roleStats.setRole(entry.getKey());
+                    roleStats.setRoleText(convertUserRoleToText(entry.getKey()));
+                    roleStats.setCount(entry.getValue());
+                    return roleStats;
+                })
+                .collect(Collectors.toList());
+
+        // 3. 统计按状态分类的数据
+        List<UserStatsDTO.StatusStats> statusStatsList = users.stream()
+                .filter(user -> user.getStatus() != null)
+                .collect(Collectors.groupingBy(User::getStatus, Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> {
+                    UserStatsDTO.StatusStats statusStats = new UserStatsDTO.StatusStats();
+                    statusStats.setStatus(entry.getKey());
+                    statusStats.setStatusText(convertUserStatusToText(entry.getKey()));
+                    statusStats.setCount(entry.getValue());
+                    return statusStats;
+                })
+                .collect(Collectors.toList());
+
+        // 4. 构建并返回 UserStatsDTO
+        UserStatsDTO statsDTO = new UserStatsDTO();
+        statsDTO.setRoleStats(roleStatsList);
+        statsDTO.setStatusStats(statusStatsList);
+        return statsDTO;
+    }
+
+    private String convertUserRoleToText(Byte role) {
+        if (role == null) {
+            return "未知角色";
+        }
+        switch (role) {
+            case 0: return "超级管理员";
+            case 1: return "普通用户";
+            case 2: return "普通管理员";
+            default: return "未知角色";
+        }
+    }
+
+    private String convertUserStatusToText(Byte status) {
+        if (status == null) {
+            return "未知状态";
+        }
+        switch (status) {
+            case 0: return "禁用";
+            case 1: return "正常";
+            default: return "未知状态";
+        }
+    }
+
 }

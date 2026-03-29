@@ -1,11 +1,12 @@
 package com.wenzi.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.wenzi.dto.UserLoginDTO;
 import com.wenzi.dto.UserQueryDTO;
 import com.wenzi.dto.UserRegisterDTO;
+import com.wenzi.dto.UserStatsDTO;
 import com.wenzi.entity.User;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * <p>
@@ -25,4 +26,7 @@ public interface IUserService extends IService<User> {
 
     // 🚀 新增：分页查询用户
     Page<User> pageQuery(UserQueryDTO dto);
+
+    // 🚀 新增：获取用户统计数据
+    UserStatsDTO getUserStatistics();
 }

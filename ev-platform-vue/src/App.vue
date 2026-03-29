@@ -44,6 +44,21 @@ const handleLogout = () => {
   ElMessage.success('已安全退出')
 }
 
+// 社区功能：显示待开发消息
+const showUnderDevelopmentMessage = () => {
+  ElMessage.info('社区功能正在开发中，敬请期待！')
+}
+
+// 预约记录功能：检查登录状态并跳转
+const navigateToAppointmentRecords = () => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录才能查看预约记录！')
+    loginDialogVisible.value = true // 打开登录弹窗
+  } else {
+    router.push('/my-appointments') // 假设预约记录页面路由为 /my-appointments
+  }
+}
+
 // --- 登录/注册弹窗控制 ---
 const loginDialogVisible = ref(false)
 const activeTab = ref('login')
@@ -147,13 +162,13 @@ const handleRegisterSubmit = async () => {
         </router-link>
 
         <div class="nav-center">
-          <router-link to="/" class="nav-item">内容</router-link>
-          <a href="#" class="nav-item">视频</a>
+          <router-link to="/" class="nav-item">首页</router-link>
           
           <router-link to="/library" class="nav-item">选车</router-link>
           
-          <a href="#" class="nav-item">补贴查询</a>
-          <a href="#" class="nav-item">社区</a>
+
+          <a href="javascript:void(0);" class="nav-item" @click="showUnderDevelopmentMessage">社区</a>
+          <a href="javascript:void(0);" class="nav-item" @click="navigateToAppointmentRecords">预约记录</a>
         </div>
 
         <div class="nav-right">

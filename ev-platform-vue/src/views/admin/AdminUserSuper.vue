@@ -116,7 +116,7 @@ onMounted(() => fetchUsers())
       <el-pagination background layout="total, prev, pager, next, jumper" :total="total" v-model:current-page="queryParams.current" :page-size="queryParams.size" @current-change="handleCurrentChange" />
     </div>
 
-    <el-dialog v-model="dialogVisible" title="新增账号(Root专属)" width="400px">
+    <el-dialog v-model="dialogVisible" title="新增账号" width="400px">
       <el-form :model="form" ref="formRef" label-width="80px">
         <el-form-item label="用户名" prop="username" :rules="[{ required: true, message: '必填' }]">
           <el-input v-model="form.username" />

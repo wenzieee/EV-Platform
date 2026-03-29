@@ -12,6 +12,7 @@ import com.wenzi.entity.User;
 import com.wenzi.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.wenzi.dto.UserStatsDTO;
 
 //import javax.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,6 +65,16 @@ public class UserController {
     public Result<Page<User>> pageQuery(@RequestBody UserQueryDTO dto) {
         Page<User> pageResult = userService.pageQuery(dto);
         return Result.success(pageResult);
+    }
+
+    /**
+     * 获取用户统计数据
+     * 访问路径: GET http://localhost:8080/user/stats
+     */
+    @GetMapping("/stats")
+    public Result<UserStatsDTO> getUserStats() {
+        UserStatsDTO stats = userService.getUserStatistics();
+        return Result.success(stats);
     }
 
     /**
@@ -165,7 +176,6 @@ public class UserController {
             return Result.error("服务器异常：" + e.getMessage());
         }
     }
-
 
 
 }

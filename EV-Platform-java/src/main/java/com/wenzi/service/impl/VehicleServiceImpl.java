@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wenzi.dto.VehicleQueryDTO;
+import com.wenzi.dto.VehicleStatsDTO;
 import com.wenzi.entity.Vehicle;
 import com.wenzi.mapper.VehicleMapper;
 import com.wenzi.service.IVehicleService;
@@ -11,6 +12,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -74,6 +76,7 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
         // 5. 执行分页查询并返回
         return this.page(page, wrapper);
     }
+
     @Override
     public List<Vehicle> getHotVehicles() {
         LambdaQueryWrapper<Vehicle> wrapper = new LambdaQueryWrapper<>();
@@ -81,6 +84,44 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
                 .orderByDesc(Vehicle::getHotScore)  // 核心：按热度值降序排列
                 .last("LIMIT 6");                   // 只取前 6 条
         return this.list(wrapper);
+    }
+
+    @Override
+    public VehicleStatsDTO getVehicleStatistics() {
+        // 1. 查询所有上架中的车辆
+        LambdaQueryWrapper<Vehicle> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Vehicle::getStatus, 1);
+        List<Vehicle> onSaleVehicles = this.list(queryWrapper);
+
+        // 2. 统计按品牌分类的数据
+        List<VehicleStatsDTO.BrandStats> brandStatsList = onSaleVehicles.stream()
+                .collect(Collectors.groupingBy(Vehicle::getBrand, Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> {
+                    VehicleStatsDTO.BrandStats brandStats = new VehicleStatsDTO.BrandStats();
+                    brandStats.setBrand(entry.getKey());
+                    brandStats.setCount(entry.getValue());
+                    return brandStats;
+                })
+                .collect(Collectors.toList());
+
+        // 3. 统计按驱动类型分类的数据
+        List<VehicleStatsDTO.DriveTypeStats> driveTypeStatsList = onSaleVehicles.stream()
+                .collect(Collectors.groupingBy(Vehicle::getDriveType, Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> {
+                    VehicleStatsDTO.DriveTypeStats driveTypeStats = new VehicleStatsDTO.DriveTypeStats();
+                    driveTypeStats.setDriveType(entry.getKey());
+                    driveTypeStats.setCount(entry.getValue());
+                    return driveTypeStats;
+                })
+                .collect(Collectors.toList());
+
+        // 4. 构建并返回 VehicleStatsDTO
+        VehicleStatsDTO statsDTO = new VehicleStatsDTO();
+        statsDTO.setBrandStats(brandStatsList);
+        statsDTO.setDriveTypeStats(driveTypeStatsList);
+        return statsDTO;
     }
 
 }

@@ -16,7 +16,7 @@ const form = reactive({
   city: '郑州',
   name: '',
   phone: '',
-  code: ''
+
 })
 
 const cityOptions = ['北京', '上海', '广州', '深圳', '郑州', '杭州', '成都', '武汉']
@@ -42,7 +42,7 @@ const switchTab = (tab) => {
 
 // 真实的提交表单请求 (注意这里加了 async)
 const handleSubmit = async () => {
-  if (!form.name || !form.phone || !form.code) {
+  if (!form.name || !form.phone) {
     ElMessage.warning('请将必填信息填写完整')
     return
   }
@@ -136,12 +136,7 @@ onMounted(() => {
             <el-input v-model="form.phone" placeholder="请填写手机号码" style="width: 320px;" />
           </el-form-item>
 
-          <el-form-item label="验 证 码：" required>
-            <div style="display: flex; gap: 10px; width: 320px;">
-              <el-input v-model="form.code" placeholder="请填写验证码" />
-              <el-button plain style="width: 120px;">获取验证码</el-button>
-            </div>
-          </el-form-item>
+
 
           <el-form-item>
             <el-button 

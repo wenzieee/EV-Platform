@@ -17,3 +17,7 @@ mybatis-plus:
     map-underscore-to-camel-case: true
     # 开发阶段开启控制台 SQL 打印，极大方便排错
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.wenzi: DEBUG

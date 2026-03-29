@@ -3,6 +3,7 @@ package com.wenzi.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wenzi.common.Result;
 import com.wenzi.dto.VehicleQueryDTO;
+import com.wenzi.dto.VehicleStatsDTO;
 import com.wenzi.entity.Vehicle;
 import com.wenzi.service.IVehicleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +68,16 @@ public class VehicleController {
     public Result<List<Vehicle>> getHotList() {
         List<Vehicle> hotList = vehicleService.getHotVehicles();
         return Result.success(hotList);
+    }
+
+    /**
+     * 获取车辆统计数据
+     * 访问路径: GET http://localhost:8080/vehicle/stats
+     */
+    @GetMapping("/stats")
+    public Result<VehicleStatsDTO> getVehicleStats() {
+        VehicleStatsDTO stats = vehicleService.getVehicleStatistics();
+        return Result.success(stats);
     }
 
     /**

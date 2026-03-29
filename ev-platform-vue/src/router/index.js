@@ -4,6 +4,7 @@ import VehicleDetailView from '../views/VehicleDetailView.vue'
 import VehicleLibraryView from '../views/VehicleLibraryView.vue'
 import VehicleIntentView from '../views/VehicleIntentView.vue'
 import VehicleSearchView from '../views/VehicleSearchView.vue' 
+import MyAppointmentsView from '../views/MyAppointmentsView.vue' // 引入我的预约记录页面
 
 // 引入后台管理的组件
 import AdminLayout from '../views/admin/AdminLayout.vue'
@@ -13,6 +14,9 @@ import AdminIntent from '../views/admin/AdminIntent.vue'
 // 🚀 核心改动 1：引入两个物理隔离的用户管理页面
 import AdminUserSuper from '../views/admin/AdminUserSuper.vue'
 import AdminUserNormal from '../views/admin/AdminUserNormal.vue'
+import AdminVehicleStats from '../views/admin/AdminVehicleStats.vue' // 引入车辆数据统计页面
+import AdminIntentStats from '../views/admin/AdminIntentStats.vue' // 引入用户线索(订单)统计页面
+import AdminUserStats from '../views/admin/AdminUserStats.vue' // 引入用户统计页面
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,6 +26,7 @@ const router = createRouter({
     { path: '/library', name: 'library', component: VehicleLibraryView },
     { path: '/intent/:id', name: 'vehicleIntent', component: VehicleIntentView },
     { path: '/search', name: 'vehicleSearch', component: VehicleSearchView },
+    { path: '/my-appointments', name: 'myAppointments', component: MyAppointmentsView }, // 我的预约记录
 
     // 后台管理路由
     {
@@ -35,9 +40,19 @@ const router = createRouter({
           component: AdminVehicle
         },
         {
+          path: 'vehicle-stats',
+          name: 'adminVehicleStats',
+          component: AdminVehicleStats
+        },
+        {
           path: 'intent',
           name: 'adminIntent',
           component: AdminIntent
+        },
+        {
+          path: 'intent-stats',
+          name: 'adminIntentStats',
+          component: AdminIntentStats
         },
         // 🚀 核心改动 2：路由分流枢纽
         {
@@ -48,9 +63,9 @@ const router = createRouter({
             const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
             // 🚀 核心修复：强制转为数字
             const currentRole = Number(userInfo.role)
-            if (userInfo.role === 0) {
+            if (currentRole === 0) {
               next('/admin/user-super') // 超级管理员去专属页面
-            } else if (userInfo.role === 2) {
+            } else if (currentRole === 2) {
               next('/admin/user-normal') // 普通管理员去限制页面
             } else {
               next('/') // 其他情况踢回首页
@@ -67,6 +82,11 @@ const router = createRouter({
           path: 'user-normal',
           name: 'adminUserNormal',
           component: AdminUserNormal
+        },
+        {
+          path: 'user-stats',
+          name: 'adminUserStats',
+          component: AdminUserStats
         }
       ]
     }
@@ -74,31 +94,39 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  if (!to.path.startsWith('/admin')) {
-    return next()
-  }
+  const userInfoStr = localStorage.getItem('userInfo');
+  let role = null;
 
-  const userInfoStr = localStorage.getItem('userInfo')
-  let role = null
-  
   if (userInfoStr) {
     try {
-      // 🚀 核心修复：强制转为数字
-      const parsedRole = JSON.parse(userInfoStr).role
-      if (parsedRole !== undefined && parsedRole !== null) {
-        role = Number(parsedRole)
+      const parsedInfo = JSON.parse(userInfoStr);
+      if (typeof parsedInfo.role !== 'undefined' && parsedInfo.role !== null) {
+        role = Number(parsedInfo.role);
       }
     } catch (e) {
-      console.error("解析用户信息失败")
+      console.error("解析用户信息失败", e);
     }
   }
 
-  // 拦截逻辑
-  if (role === null || role === 1) {
-    return next('/')
+  const isAdminRole = (role === 0 || role === 2);
+  const isCsidePath = !to.path.startsWith('/admin');
+
+  // Case 1: Non-admin trying to access admin paths
+  // Includes unauthenticated users (role is null) or normal users (role is 1)
+  if (!isAdminRole && !isCsidePath) {
+    // If they are trying to go to an admin path without admin privileges
+    return next('/'); // Redirect to C-side home
   }
 
-  next()
-})
+  // Case 2: Admin users (role 0 or 2) landing on the C-side home page ('/')
+  // This is primarily for post-login redirects or if they manually navigate to '/'.
+  // If an admin user is trying to access the C-side home, redirect them to admin dashboard.
+  if (isAdminRole && to.path === '/') {
+    return next('/admin/vehicle'); // Redirect admin roles to admin dashboard
+  }
+
+  // All other scenarios: allow navigation
+  next();
+});
 
 export default router

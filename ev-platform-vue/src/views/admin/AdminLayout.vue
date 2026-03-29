@@ -61,15 +61,29 @@ onMounted(() => {
           <el-icon><Van /></el-icon>
           <span>车辆数据管理</span>
         </el-menu-item>
+
+        <el-menu-item index="/admin/vehicle-stats">
+          <el-icon><List /></el-icon> <!-- 使用一个合适的图标，这里暂时用 List -->
+          <span>车辆数据统计</span>
+        </el-menu-item>
         
         <el-menu-item index="/admin/intent">
           <el-icon><List /></el-icon>
           <span>用户线索(订单)</span>
         </el-menu-item>
 
+        <el-menu-item index="/admin/intent-stats">
+          <el-icon><List /></el-icon> <!-- 临时使用 List 图标 -->
+          <span>用户线索(订单)统计</span>
+        </el-menu-item>
+
         <el-menu-item index="/admin/user">
           <el-icon><User /></el-icon>
-          <span>用户权限管理</span>
+          <span>用户管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/user-stats">
+          <el-icon><List /></el-icon>
+          <span>用户统计</span>
         </el-menu-item>
 
       </el-menu>
