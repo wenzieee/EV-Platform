@@ -43,6 +43,10 @@ public class User implements Serializable {
     @TableField("nickname")
     private String nickname;
 
+    @ApiModelProperty("用户头像URL")
+    @TableField("avatar")
+    private String avatar;
+
     @ApiModelProperty("联系电话")
     @TableField("phone")
     private String phone;
@@ -50,6 +54,14 @@ public class User implements Serializable {
     @ApiModelProperty("角色: 0-管理员, 1-普通用户")
     @TableField("role")
     private Byte role;
+
+    @ApiModelProperty("关注数")
+    @TableField("following_count")
+    private Integer followingCount;
+
+    @ApiModelProperty("粉丝数")
+    @TableField("follower_count")
+    private Integer followerCount;
 
     @ApiModelProperty("状态: 0-禁用, 1-正常")
     @TableField("status")

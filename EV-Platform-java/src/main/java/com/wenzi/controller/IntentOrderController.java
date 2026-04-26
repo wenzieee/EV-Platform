@@ -9,6 +9,7 @@ import com.wenzi.dto.IntentStatsDTO;
 import com.wenzi.dto.IntentSubmitDTO;
 import com.wenzi.entity.IntentOrder;
 import com.wenzi.service.IIntentOrderService;
+import com.wenzi.service.IMessageService;
 import com.wenzi.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,21 +23,20 @@ public class IntentOrderController {
     @Autowired
     private IIntentOrderService intentOrderService;
 
+    @Autowired
+    private IMessageService messageService;
+
     @PostMapping("/submit")
     public Result<String> submit(@RequestBody IntentSubmitDTO dto, HttpServletRequest request) {
-        // 1. 从请求头中获取 token
         String token = request.getHeader("token");
 
-        // 2. 校验 token 是否合法（未登录或伪造）
         if (StrUtil.isBlank(token) || !JwtUtils.verifyToken(token)) {
             return Result.error("请先登录后再提交意向订单！");
         }
 
         try {
-            // 3. 解析 Token 获取 userId
             Long userId = Long.valueOf(JWTUtil.parseToken(token).getPayload("id").toString());
 
-            // 4. 调用业务逻辑
             intentOrderService.submitIntent(dto, userId);
             return Result.success("提交成功，销售顾问将尽快与您联系！");
 
@@ -46,25 +46,18 @@ public class IntentOrderController {
         }
     }
 
-    /**
-     * 分页查询当前登录用户的线索列表
-     */
     @PostMapping("/my-records")
     public Result<Page<IntentOrder>> myRecords(@RequestBody IntentQueryDTO dto, HttpServletRequest request) {
-        // 1. 从请求头中获取 token
         String token = request.getHeader("token");
 
-        // 2. 校验 token 是否合法（未登录或伪造）
         if (StrUtil.isBlank(token) || !JwtUtils.verifyToken(token)) {
             return Result.error("请先登录后再查看预约记录！");
         }
 
         try {
-            // 3. 解析 Token 获取 userId
             Long userId = Long.valueOf(JWTUtil.parseToken(token).getPayload("id").toString());
             dto.setUserId(userId);
 
-            // 4. 调用业务逻辑
             Page<IntentOrder> pageResult = intentOrderService.pageQuery(dto);
             return Result.success(pageResult);
 
@@ -74,36 +67,38 @@ public class IntentOrderController {
         }
     }
 
-    /**
-     * 分页查询线索列表
-     */
     @PostMapping("/page")
     public Result<Page<IntentOrder>> pageQuery(@RequestBody IntentQueryDTO dto) {
         Page<IntentOrder> pageResult = intentOrderService.pageQuery(dto);
         return Result.success(pageResult);
     }
 
-    /**
-     * 获取意向订单统计数据
-     * 访问路径: GET http://localhost:8080/intent/stats
-     */
     @GetMapping("/stats")
     public Result<IntentStatsDTO> getIntentStats() {
         IntentStatsDTO stats = intentOrderService.getIntentStatistics();
         return Result.success(stats);
     }
 
-    /**
-     * 更新线索状态 (标记为已处理)
-     */
     @PostMapping("/update")
     public Result<String> update(@RequestBody IntentOrder intentOrder) {
         try {
+            IntentOrder existingOrder = intentOrderService.getById(intentOrder.getId());
+            if (existingOrder == null) {
+                return Result.error("更新失败，找不到该线索数据");
+            }
+
+            Byte oldStatus = existingOrder.getStatus();
+            Byte newStatus = intentOrder.getStatus();
+
             boolean success = intentOrderService.updateById(intentOrder);
             if (success) {
+                if (newStatus != null && !newStatus.equals(oldStatus) && newStatus != 0) {
+                    String messageContent = buildAutoMessage(newStatus, existingOrder);
+                    messageService.sendMessage(0L, existingOrder.getUserId(), messageContent);
+                }
                 return Result.success("状态更新成功！");
             } else {
-                return Result.error("更新失败，找不到该线索数据");
+                return Result.error("更新失败");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -111,9 +106,19 @@ public class IntentOrderController {
         }
     }
 
-    /**
-     * 删除线索
-     */
+    private String buildAutoMessage(Byte status, IntentOrder order) {
+        switch (status) {
+            case 1:
+                return "您好！您的预约已有销售顾问跟进，将尽快与您联系，请保持电话畅通！";
+            case 2:
+                return "恭喜！您的预约已成交，感谢您的信任，期待为您带来更多优质服务！";
+            case 3:
+                return "您好！您的预约已取消，如有需要可随时重新预约。";
+            default:
+                return "您好！您的预约状态已更新，请注意查看。";
+        }
+    }
+
     @DeleteMapping("/delete/{id}")
     public Result<String> delete(@PathVariable Long id) {
         try {
@@ -122,6 +127,50 @@ public class IntentOrderController {
                 return Result.success("删除成功！");
             } else {
                 return Result.error("删除失败，该线索可能已被删除");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("服务器异常：" + e.getMessage());
+        }
+    }
+
+    @PostMapping("/cancel/{id}")
+    public Result<String> cancel(@PathVariable Long id, HttpServletRequest request) {
+        String token = request.getHeader("token");
+
+        if (StrUtil.isBlank(token) || !JwtUtils.verifyToken(token)) {
+            return Result.error("请先登录后再取消预约！");
+        }
+
+        try {
+            Long userId = Long.valueOf(JWTUtil.parseToken(token).getPayload("id").toString());
+
+            IntentOrder existingOrder = intentOrderService.getById(id);
+            if (existingOrder == null) {
+                return Result.error("取消失败，找不到该预约记录");
+            }
+
+            if (!existingOrder.getUserId().equals(userId)) {
+                return Result.error("无权取消他人的预约");
+            }
+
+            if (existingOrder.getStatus() == 3) {
+                return Result.error("该预约已经取消过了");
+            }
+
+            if (existingOrder.getStatus() == 2) {
+                return Result.error("该预约已成交，无法取消");
+            }
+
+            existingOrder.setStatus((byte) 3);
+            boolean success = intentOrderService.updateById(existingOrder);
+
+            if (success) {
+                String messageContent = buildAutoMessage((byte) 3, existingOrder);
+                messageService.sendMessage(0L, existingOrder.getUserId(), messageContent);
+                return Result.success("预约已成功取消！");
+            } else {
+                return Result.error("取消失败");
             }
         } catch (Exception e) {
             e.printStackTrace();

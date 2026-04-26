@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import com.wenzi.dto.UserStatsDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <p>
@@ -43,6 +44,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 2. 将数据落表
         User user = new User();
         user.setUsername(dto.getUsername());
+        user.setNickname(dto.getNickname());
         user.setRole((byte)1); // 默认 1 为普通用户
         user.setStatus((byte)1); // 默认 1 为正常状态
 
@@ -157,6 +159,42 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             case 0: return "禁用";
             case 1: return "正常";
             default: return "未知状态";
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateFollowingCount(Long userId, boolean increment) {
+        User user = this.getById(userId);
+        if (user != null) {
+            Integer count = user.getFollowingCount();
+            if (count == null) {
+                count = 0;
+            }
+            if (increment) {
+                user.setFollowingCount(count + 1);
+            } else {
+                user.setFollowingCount(Math.max(0, count - 1));
+            }
+            this.updateById(user);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateFollowerCount(Long userId, boolean increment) {
+        User user = this.getById(userId);
+        if (user != null) {
+            Integer count = user.getFollowerCount();
+            if (count == null) {
+                count = 0;
+            }
+            if (increment) {
+                user.setFollowerCount(count + 1);
+            } else {
+                user.setFollowerCount(Math.max(0, count - 1));
+            }
+            this.updateById(user);
         }
     }
 

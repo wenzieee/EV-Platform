@@ -92,7 +92,6 @@ onMounted(() => {
     <el-container>
       <el-header class="admin-header">
         <div class="header-breadcrumb">
-          <h3>后台控制台</h3>
         </div>
         <div class="header-right">
         <span class="welcome-text">欢迎您，{{ displayName }}</span>
@@ -123,10 +122,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: black;
   font-size: 18px;
   font-weight: bold;
-  background-color: #2b3643;
+  background-color: #fff;
 }
 .logo-img {
   height: 30px;

@@ -8,6 +8,23 @@
           {{ scope.row.brand }} {{ scope.row.model }}
         </template>
       </el-table-column>
+      <el-table-column label="预约门店" width="200">
+        <template #default="scope">
+          <span v-if="scope.row.dealerName">
+            <div v-for="(name, index) in scope.row.dealerName.split(',')" :key="index">{{ name.trim() }}</div>
+          </span>
+          <span v-else>未选择门店</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="门店地址" width="250">
+        <template #default="scope">
+          <span v-if="scope.row.dealerAddress">
+            <div v-for="(address, index) in scope.row.dealerAddress.split(',')" :key="index">{{ address.trim() }}</div>
+          </span>
+          <span v-else>-
+          </span>
+        </template>
+      </el-table-column>
       <el-table-column prop="contactPhone" label="联系电话" width="120"></el-table-column>
       <el-table-column prop="message" label="留言信息"></el-table-column>
       <el-table-column prop="status" label="跟进状态" width="100">

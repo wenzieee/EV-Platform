@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Check, Delete } from '@element-plus/icons-vue'
+import { Search, Check, CircleCheck, Delete } from '@element-plus/icons-vue'
 import request from '../../utils/request'
 
 // --- 表格与分页数据 ---
@@ -68,6 +68,28 @@ const handleProcess = (row) => {
   }).catch(() => {})
 }
 
+// --- 标记为已成交 ---
+const handleComplete = (row) => {
+  ElMessageBox.confirm(`确定将尾号为 ${row.contactPhone.slice(-4)} 的客户线索标记为“已成交”吗？`, '成交确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'success',
+  }).then(async () => {
+    try {
+      const res = await request.post('/intent/update', { id: row.id, status: 2 })
+      if (res.code === 200) {
+        ElMessage.success('已成功标记为已成交')
+        fetchIntents()
+      } else {
+        ElMessage.error(res.msg || '操作失败')
+      }
+    } catch (error) {
+      console.error(error)
+      ElMessage.error('网络异常')
+    }
+  }).catch(() => {})
+}
+
 // --- 删除线索 ---
 const handleDelete = (id) => {
   ElMessageBox.confirm('确定要永久删除这条用户留资线索吗？', '高危操作', {
@@ -87,6 +109,28 @@ const handleDelete = (id) => {
       console.error(error)
     }
   }).catch(() => {})
+}
+
+// --- 获取状态文本 ---
+const getStatusText = (status) => {
+  switch (status) {
+    case 0: return '待处理'
+    case 1: return '跟进中'
+    case 2: return '已成交'
+    case 3: return '已取消'
+    default: return '未知'
+  }
+}
+
+// --- 获取状态标签类型 ---
+const getStatusTagType = (status) => {
+  switch (status) {
+    case 0: return 'warning'
+    case 1: return 'primary'
+    case 2: return 'success'
+    case 3: return 'info'
+    default: return 'info'
+  }
 }
 
 onMounted(() => {
@@ -146,14 +190,15 @@ onMounted(() => {
 
       <el-table-column prop="status" label="处理状态" width="120" align="center" fixed="right">
         <template #default="scope">
-          <el-tag :type="scope.row.status === 1 ? 'success' : 'warning'" effect="dark">
-            {{ scope.row.status === 1 ? '已跟进' : '待处理' }}
+          <el-tag :type="getStatusTagType(scope.row.status)" effect="dark">
+            {{ getStatusText(scope.row.status) }}
           </el-tag>
         </template>
       </el-table-column>
       
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="scope">
+          <!-- 待处理状态 -->
           <el-button 
             v-if="scope.row.status === 0" 
             size="small" 
@@ -162,7 +207,23 @@ onMounted(() => {
             @click="handleProcess(scope.row)"
           >标记处理</el-button>
           
-          <el-button size="small" type="danger" :icon="Delete" @click="handleDelete(scope.row.id)">删除</el-button>
+          <!-- 跟进中状态 -->
+          <el-button 
+            v-else-if="scope.row.status === 1" 
+            size="small" 
+            type="primary" 
+            :icon="CheckCircle" 
+            @click="handleComplete(scope.row)"
+          >标记成交</el-button>
+          
+          <!-- 已成交或已取消状态 -->
+          <el-button 
+            v-else 
+            size="small" 
+            type="danger" 
+            :icon="Delete" 
+            @click="handleDelete(scope.row.id)"
+          >删除</el-button>
         </template>
       </el-table-column>
     </el-table>

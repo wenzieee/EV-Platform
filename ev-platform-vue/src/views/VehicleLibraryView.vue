@@ -14,13 +14,22 @@ const queryParams = reactive({
   current: 1,
   size: 8, // 每页显示 8 辆车 (一行 4 个，刚好两行)
   brand: '',
+  driveType: '', // 新增驱动类型筛选项
   minPrice: null,
   maxPrice: null
 })
 
 // --- 筛选项配置 ---
 // 品牌选项
-const brandOptions = ['比亚迪', '特斯拉', '理想', '蔚来', '小鹏', '问界', '极氪', '小米']
+const brandOptions = ['比亚迪', '特斯拉', '理想', '蔚来', '小鹏', '问界', '极氪', '小米', '阿维塔'] // 新增阿维塔
+
+// 驱动类型选项
+const driveTypeOptions = ['前置前驱', '后置后驱', '双电机四驱']
+
+// 记录当前选中的高亮状态 ('不限' 为空字符串)
+const activeBrand = ref('')
+const activePriceLabel = ref('')
+const activeDriveType = ref('') // 新增激活的驱动类型
 // 价格选项 (包含展示文本和对应的真实价格区间)
 const priceOptions = [
   { label: '15万以下', min: 0, max: 15 },
@@ -28,10 +37,6 @@ const priceOptions = [
   { label: '25-35万', min: 25, max: 35 },
   { label: '35万以上', min: 35, max: 999 }
 ]
-
-// 记录当前选中的高亮状态 ('不限' 为空字符串)
-const activeBrand = ref('')
-const activePriceLabel = ref('')
 
 // 获取车辆列表核心方法
 const fetchVehicles = async () => {
@@ -70,6 +75,14 @@ const selectPrice = (priceObj) => {
   fetchVehicles()
 }
 
+// 点击驱动类型筛选
+const selectDriveType = (type) => {
+  activeDriveType.value = type
+  queryParams.driveType = type
+  queryParams.current = 1
+  fetchVehicles()
+}
+
 // 页码改变时触发
 const handleCurrentChange = (val) => {
   queryParams.current = val
@@ -104,6 +117,21 @@ onMounted(() => {
             @click="selectPrice(item)"
           >
             {{ item.label }}
+          </span>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-label">驱动：</div>
+        <div class="filter-options">
+          <span :class="['option-item', { active: activeDriveType === '' }]" @click="selectDriveType('')">不限</span>
+          <span 
+            v-for="type in driveTypeOptions" 
+            :key="type"
+            :class="['option-item', { active: activeDriveType === type }]"
+            @click="selectDriveType(type)"
+          >
+            {{ type }}
           </span>
         </div>
       </div>

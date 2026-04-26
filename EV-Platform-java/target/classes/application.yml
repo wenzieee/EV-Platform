@@ -21,3 +21,10 @@ mybatis-plus:
 logging:
   level:
     com.wenzi: DEBUG
+
+
+
+  # Dify AI 服务配置
+dify:
+  api-url: https://api.dify.ai/v1/chat-messages # Dify API 的聊天消息端点，通常不需要修改
+  app-key: app-4Uo66N2WkRneaoLJM5mIwRMV # 您的 Dify 应用密钥，请替换为您实际的密钥

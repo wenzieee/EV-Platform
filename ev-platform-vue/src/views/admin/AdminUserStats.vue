@@ -31,7 +31,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import * as echarts from 'echarts';
-import axios from 'axios';
+// ⚠️ 修复 1：引入封装好的 request，而不是原生 axios
+import request from '../../utils/request';
 
 const roleChart = ref(null);
 const statusChart = ref(null);
@@ -44,11 +45,12 @@ const hasStatusData = ref(false);
 
 const fetchUserStats = async () => {
   try {
-    const response = await axios.get('/api/user/stats');
-    console.log('API Response:', response); // 添加日志
-    if (response.data.code === 200) {
-      const stats = response.data.data;
-      console.log('User Stats Data:', stats); // 添加日志
+    // ⚠️ 修复 1：使用 request 发送请求，它会自动带上 Token
+    const res = await request.get('/user/stats');
+
+    // request 工具通常已经解开了外层的 axios data，直接判断 res.code 即可
+    if (res.code === 200) {
+      const stats = res.data;
 
       if (stats.roleStats && stats.roleStats.length > 0) {
         hasRoleData.value = true;
@@ -70,7 +72,8 @@ const fetchUserStats = async () => {
 
     } else {
       hasRoleData.value = false;
-      hasStatusData.value = false;      console.error('Failed to fetch user stats:', response.data.msg);
+      hasStatusData.value = false;
+      console.error('Failed to fetch user stats:', res.msg);
     }
   } catch (error) {
     console.error('Error fetching user stats:', error);
@@ -150,8 +153,13 @@ const renderStatusChart = (data) => {
 };
 
 const handleResize = () => {
-  myRoleChart && myRoleChart.resize();
-  myStatusChart && myStatusChart.resize();
+  // ⚠️ 修复 2：将短路表达式改为正规的 if 语句，解决 ESLint 报错
+  if (myRoleChart) {
+    myRoleChart.resize();
+  }
+  if (myStatusChart) {
+    myStatusChart.resize();
+  }
 };
 
 onMounted(() => {
@@ -169,26 +177,3 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 </script>
-
-<style scoped>
-.admin-user-stats-container {
-  padding: 20px;
-}
-.chart-card {
-  margin-bottom: 20px;
-}
-.card-header {
-  font-weight: bold;
-}
-
-.no-data-message {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 400px; /* 与图表高度一致 */
-  color: #909399;
-  font-size: 16px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-}
-</style>

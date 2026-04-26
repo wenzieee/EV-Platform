@@ -29,4 +29,18 @@ public interface IUserService extends IService<User> {
 
     // 🚀 新增：获取用户统计数据
     UserStatsDTO getUserStatistics();
+
+    /**
+     * 更新用户的关注数
+     * @param userId 用户ID
+     * @param increment true为增加，false为减少
+     */
+    void updateFollowingCount(Long userId, boolean increment);
+
+    /**
+     * 更新用户的粉丝数
+     * @param userId 用户ID
+     * @param increment true为增加，false为减少
+     */
+    void updateFollowerCount(Long userId, boolean increment);
 }

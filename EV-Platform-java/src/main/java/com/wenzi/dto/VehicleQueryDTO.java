@@ -17,4 +17,5 @@ public class VehicleQueryDTO {
     private Double minPrice;     // 最低价
     private Double maxPrice;     // 最高价
     private Boolean isAdmin;
+    private String driveType;    // 驱动类型
 }

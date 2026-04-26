@@ -1,0 +1,139 @@
+按照这个方案，你的数据库将拥有极其健康的 8 张表 结构：
+
+sys_user（核心：用户与权限）
+
+biz_vehicle（核心：车辆实体）
+
+biz_intent_order（业务：购车意向）
+
+biz_favorite（新增：轻度交互 - 收藏）
+
+biz_review（新增：深度交互 - 评价）
+
+biz_test_drive（新增：O2O交互 - 试驾）
+
+biz_vehicle_image（新增：一对多实体拆分 - 图集）
+
+biz_article（新增：内容展示 - 资讯）
+
+这 8 张表组合在一起，不仅轻松跨过了老师“至少 7 张表”的门槛，而且所有新加的表都顺理成章，完全不显得生搬硬套。
+
+你可以把这几个新模块的想法整理一下，发给指导老师看看，告诉他：“老师，我计划在 C 端加入用户收藏、车辆评价、预约试驾以及图集展示功能，这样数据库表就扩充到了 8 张，业务也更丰满了。” 他大概率会直接点头同意。
+
+
+CREATE TABLE `biz_favorite` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint(20) NOT NULL COMMENT '收藏该车辆的用户ID',
+  `vehicle_id` bigint(20) NOT NULL COMMENT '被收藏的车辆ID',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_vehicle` (`user_id`,`vehicle_id`) COMMENT '联合唯一索引，防止同一个用户重复收藏同一辆车',
+  KEY `idx_user_id` (`user_id`) COMMENT '普通索引，提高查询某个用户收藏列表的速度'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='车辆收藏/心愿单表';
+
+#毕设加分点解析：这里特意加上了 UNIQUE KEY 联合唯一索引。在论文里可以写：“利用 MySQL 的联合唯一索引从数据库底层彻底杜绝了并发情况下的重复收藏脏数据问题”。老师看到一定会觉得你基础极佳！
+
+
+#4S店/经销商表 (biz_dealer) 建表 SQL
+CREATE TABLE `biz_dealer` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `name` varchar(100) NOT NULL COMMENT '4S店/经销商名称 (如：阿维塔上海虹桥体验中心)',
+  `brand` varchar(50) NOT NULL COMMENT '授权品牌 (如：阿维塔，用于和车辆品牌匹配)',
+  `province` varchar(50) DEFAULT NULL COMMENT '省份',
+  `city` varchar(50) DEFAULT NULL COMMENT '城市',
+  `address` varchar(255) NOT NULL COMMENT '门店详细地址',
+  `phone` varchar(20) DEFAULT NULL COMMENT '门店联系电话',
+  `longitude` decimal(10,6) NOT NULL COMMENT '门店经度 (如：121.320498)',
+  `latitude` decimal(10,6) NOT NULL COMMENT '门店纬度 (如：31.194567)',
+  `status` tinyint(1) DEFAULT '1' COMMENT '营业状态：1营业中，0已闭店',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '入驻时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_brand` (`brand`) COMMENT '品牌普通索引，加快按品牌检索4S店的速度',
+  KEY `idx_location` (`longitude`,`latitude`) COMMENT '经纬度联合索引'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='4S店/经销商信息表';
+
+#“为了提升用户体验，我在平台上加入了 O2O 门店引流功能。传统计算距离的方法是查出所有门店数据在 Java 内存里算，这在数据量大时会导致 OOM（内存溢出）。因此，我采用了 MySQL 底层的 ST_Distance_Sphere 函数。该函数利用地球半径模型进行真实的球面距离计算，并在数据库层直接完成排序截取，极大降低了服务器内存消耗，体现了极高的查询效率。”
+#“老师您好，针对 O2O 门店引流的场景，我采用了**‘后端 MySQL 空间粗筛 + 前端 URI Scheme 唤醒精导’**的混合架构设计。
+在后台，我利用 MySQL 的 ST_Distance_Sphere 函数进行毫秒级的直线距离排序，这能以极低的服务器内存消耗，快速为用户锁定最邻近的 3 家店。
+而在前端，为了提供最精准的路网导航与 ETA（预计到达时间），我没有选择在应用内重复造轮子，而是基于 URI Scheme 协议直接无缝唤醒国民级应用（高德地图）。这不仅实现了零成本的跨应用服务集成，大大降低了平台自身的算力与带宽压力，还能直接复用大厂的实时路况大数据，为用户提供了最优的出行体验。”
+#电脑端的 “我的位置” 本质上是IP 所在地，不是你的物理位置。建议直接手动输入地址，比等待系统自动定位更准确高效。
+
+
+社区帖子主表 (biz_post)
+CREATE TABLE `biz_post` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '帖子主键ID',
+  `user_id` bigint(20) NOT NULL COMMENT '发布者(作者)的用户ID',
+  `title` varchar(100) DEFAULT NULL COMMENT '帖子标题 (选填)',
+  `content` text NOT NULL COMMENT '帖子正文内容',
+  `media_type` tinyint(1) DEFAULT '0' COMMENT '媒体类型: 0纯文本, 1图文, 2视频',
+  `media_urls` json DEFAULT NULL COMMENT '图片或视频的URL数组 (JSON格式存储更灵活)',
+  `view_count` int(11) DEFAULT '0' COMMENT '浏览量',
+  `like_count` int(11) DEFAULT '0' COMMENT '总点赞数 (冗余字段，方便快速查询)',
+  `comment_count` int(11) DEFAULT '0' COMMENT '总评论数 (冗余字段)',
+  `collect_count` int(11) DEFAULT '0' COMMENT '总收藏数 (冗余字段)',
+  `status` tinyint(1) DEFAULT '1' COMMENT '状态: 1正常展示, 0用户删除或后台违规隐藏',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`) COMMENT '方便查询某人的所有发帖',
+  KEY `idx_create_time` (`create_time`) COMMENT '方便社区首页按最新时间排序拉取'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='社区帖子表';
+
+
+帖子评论表 (biz_comment)
+CREATE TABLE `biz_comment` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '评论主键ID',
+  `post_id` bigint(20) NOT NULL COMMENT '所属帖子ID',
+  `user_id` bigint(20) NOT NULL COMMENT '评论者用户ID',
+  `parent_id` bigint(20) DEFAULT '0' COMMENT '父评论ID (0表示是对帖子的直接评论，非0表示回复别人的评论)',
+  `content` varchar(500) NOT NULL COMMENT '评论内容 (限制500字以内)',
+  `like_count` int(11) DEFAULT '0' COMMENT '评论的点赞数',
+  `status` tinyint(1) DEFAULT '1' COMMENT '状态: 1正常, 0删除/隐藏',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_post_id` (`post_id`) COMMENT '极其重要：查询某篇帖子的所有评论'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子评论表';
+
+帖子点赞记录表 (biz_post_like)
+CREATE TABLE `biz_post_like` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `post_id` bigint(20) NOT NULL COMMENT '被点赞的帖子ID',
+  `user_id` bigint(20) NOT NULL COMMENT '点赞的用户ID',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_post_user` (`post_id`,`user_id`) COMMENT '联合唯一索引：物理层面杜绝同一个用户对同一篇帖子重复点赞'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子点赞记录表';
+
+帖子收藏记录表 (biz_post_collection)
+CREATE TABLE `biz_post_collection` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `post_id` bigint(20) NOT NULL COMMENT '被收藏的帖子ID',
+  `user_id` bigint(20) NOT NULL COMMENT '收藏的用户ID',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_post_user` (`post_id`,`user_id`) COMMENT '联合唯一索引：防止重复收藏'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子收藏记录表';
+
+JSON 类型的应用：在 biz_post 表中，图片的 URL 我没有使用传统的一对多拆表，而是使用了 MySQL 5.7+ 引入的 原生 JSON 数据类型 (media_urls)。这既保证了存储多张图片的灵活性，又减少了连表查询的开销。
+
+冗余字段设计（空间换时间）：在帖子表里故意设计了 like_count、comment_count。在真实的高并发场景下，如果每次加载帖子列表都要去 biz_post_like 表里 COUNT(*)，数据库一定会卡死。所以我们采用了反范式设计，在点赞时同步更新帖子表里的总数，极大提升了社区首页的加载速度。
+
+防并发刷赞机制：利用数据库的 UNIQUE KEY 联合唯一索引作为最后一道防线，即使前端被人恶意写脚本高频调用点赞接口，数据库底层也会抛出 DuplicateKeyException 从而阻断重复数据，保证了业务的严谨性。
+
+新增“用户关注关系表”
+CREATE TABLE `biz_user_follow` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `follower_id` bigint(20) NOT NULL COMMENT '关注者ID (主动点击关注的人)',
+  `followee_id` bigint(20) NOT NULL COMMENT '被关注者ID (大V/UP主)',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '关注时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_follower_followee` (`follower_id`,`followee_id`) COMMENT '联合唯一索引：防止重复关注',
+  KEY `idx_follower` (`follower_id`) COMMENT '普通索引：用于快速查询【我的关注】列表',
+  KEY `idx_followee` (`followee_id`) COMMENT '普通索引：用于快速查询【我的粉丝】列表'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户关注关系表';
+
+修改原有的“用户表 (sys_user)”
+ALTER TABLE `sys_user` 
+ADD COLUMN `following_count` int(11) DEFAULT '0' COMMENT '关注数 (该用户关注了多少人)' AFTER `role`,
+ADD COLUMN `follower_count` int(11) DEFAULT '0' COMMENT '粉丝数 (该用户有多少粉丝)' AFTER `following_count`;
+

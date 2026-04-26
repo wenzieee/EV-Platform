@@ -1,0 +1,7 @@
+"id","username","password","nickname","phone","role","status","create_time","update_time","is_deleted"
+2,wenzi,$2a$10$RbvZT44AIuKqMOx.K.pp3.OD0ZedJwUQOL7xSLz8TNiKZYa/lls1C,,,1,1,"2026-03-21 23:08:21","2026-03-28 14:52:57",0
+3,admin,$2a$10$twhTQUmI1siIh3snR4wwtOSuwLpJJ1zNC/MeIYH3EBk4HfteqKd6a,,,2,1,"2026-03-22 10:29:23","2026-03-24 12:35:32",0
+4,admin-wenzi,$2a$10$tMhMBt1CTWJxQbILRPy/dOK.JtQgvrKaTXQZx6pHjzzWKMPPip4x.,,,2,1,"2026-03-23 11:01:50","2026-03-28 14:35:00",0
+5,root,$2a$10$KtNE8JnkH0qLequ5gxRAv.ypAaZhbUBRwVOaHhUfZSHyidvCnmgTm,,,0,1,"2026-03-23 11:25:40","2026-03-23 11:25:50",0
+6,jiege,$2a$10$BLqMW9H9f9XkwUmaZcLMguhZcVKu4Dc1or/SgoufqLjnNFCgRcERu,,,1,1,"2026-03-29 09:44:25","2026-03-29 11:43:59",0
+7,zhonghaoyang,$2a$10$sTwMMaqs.Jp23hPhtcWKjO8MMqCkxovryiPruBAZ0JIRRS0168gTi,,,1,0,"2026-03-29 11:44:33","2026-03-29 11:44:46",0

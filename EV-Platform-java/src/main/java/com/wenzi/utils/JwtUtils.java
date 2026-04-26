@@ -42,4 +42,26 @@ public class JwtUtils {
             return false;
         }
     }
+
+    /**
+     * 从 Token 中提取 userId
+     * @param token 字符串
+     * @return 用户ID，解析失败则返回 null
+     */
+    public static Long getUserId(String token) {
+        try {
+            JWT jwt = JWTUtil.parseToken(token);
+            Object idObj = jwt.getPayload("id");
+            if (idObj != null) {
+                return Long.valueOf(idObj.toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+
+
 }

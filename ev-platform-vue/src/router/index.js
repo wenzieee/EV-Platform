@@ -3,8 +3,10 @@ import HomeView from '../views/HomeView.vue'
 import VehicleDetailView from '../views/VehicleDetailView.vue'
 import VehicleLibraryView from '../views/VehicleLibraryView.vue'
 import VehicleIntentView from '../views/VehicleIntentView.vue'
-import VehicleSearchView from '../views/VehicleSearchView.vue' 
+import VehicleSearchView from '../views/VehicleSearchView.vue'
 import MyAppointmentsView from '../views/MyAppointmentsView.vue' // 引入我的预约记录页面
+import CommunityView from '../views/CommunityView.vue'
+
 
 // 引入后台管理的组件
 import AdminLayout from '../views/admin/AdminLayout.vue'
@@ -27,6 +29,13 @@ const router = createRouter({
     { path: '/intent/:id', name: 'vehicleIntent', component: VehicleIntentView },
     { path: '/search', name: 'vehicleSearch', component: VehicleSearchView },
     { path: '/my-appointments', name: 'myAppointments', component: MyAppointmentsView }, // 我的预约记录
+    { path: '/community', name: 'community', component: CommunityView },
+    { path: '/community/create', name: 'postCreate', component: () => import('../views/PostCreateView.vue') },
+    { path: '/community/edit/:id', name: 'postEdit', component: () => import('../views/PostCreateView.vue') },
+    { path: '/post/:id', name: 'postDetail', component: () => import('../views/PostDetailView.vue') },
+    { path: '/profile', name: 'userProfile', component: () => import('../views/UserProfileView.vue') },
+    { path: '/personal', name: 'personalCenter', component: () => import('../views/PersonalCenterView.vue') },
+    { path: '/community/edit/:id', name: 'postEdit', component: () => import('../views/PostCreateView.vue') },
 
     // 后台管理路由
     {

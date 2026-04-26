@@ -36,7 +36,8 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
         // 3. 基础查询条件 (品牌、价格下限、价格上限)
         wrapper.eq(StringUtils.isNotBlank(dto.getBrand()), Vehicle::getBrand, dto.getBrand())
                 .ge(dto.getMinPrice() != null, Vehicle::getPrice, dto.getMinPrice())
-                .le(dto.getMaxPrice() != null, Vehicle::getPrice, dto.getMaxPrice());
+                .le(dto.getMaxPrice() != null, Vehicle::getPrice, dto.getMaxPrice())
+                .eq(StringUtils.isNotBlank(dto.getDriveType()), Vehicle::getDriveType, dto.getDriveType());
 
         // 🚀 核心升级：处理全局搜索关键词 (跨字段模糊匹配)
         if (StringUtils.isNotBlank(dto.getKeyword())) {

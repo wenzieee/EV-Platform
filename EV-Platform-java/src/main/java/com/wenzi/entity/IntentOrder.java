@@ -39,6 +39,10 @@ public class IntentOrder implements Serializable {
     @TableField("vehicle_id")
     private Long vehicleId;
 
+    @ApiModelProperty("意向4S店ID列表，逗号分隔")
+    @TableField("dealer_id")
+    private String dealerIds;
+
     @ApiModelProperty("联系电话")
     @TableField("contact_phone")
     private String contactPhone;
@@ -69,4 +73,10 @@ public class IntentOrder implements Serializable {
 
     @TableField(exist = false)
     private String model;
+
+    @TableField(exist = false)
+    private String dealerName;
+
+    @TableField(exist = false)
+    private String dealerAddress;
 }

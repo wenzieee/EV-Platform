@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wenzi.dto.IntentQueryDTO;
 import com.wenzi.dto.IntentStatsDTO;
 import com.wenzi.dto.IntentSubmitDTO;
+import com.wenzi.entity.Dealer;
 import com.wenzi.entity.IntentOrder;
 import com.wenzi.entity.Vehicle;
 import com.wenzi.mapper.IntentOrderMapper;
+import com.wenzi.service.IDealerService;
 import com.wenzi.service.IIntentOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wenzi.service.IVehicleService;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.Arrays;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * <p>
@@ -38,6 +42,10 @@ public class IntentOrderServiceImpl extends ServiceImpl<IntentOrderMapper, Inten
     @Autowired
     private IVehicleService vehicleService;
 
+    // 新增：注入经销商服务，用来查4S店信息
+    @Autowired
+    private IDealerService dealerService;
+
     @Override
     public void submitIntent(IntentSubmitDTO dto, Long userId) {
         IntentOrder order = new IntentOrder();
@@ -46,6 +54,14 @@ public class IntentOrderServiceImpl extends ServiceImpl<IntentOrderMapper, Inten
         order.setUserId(userId);
         order.setVehicleId(dto.getVehicleId());
         order.setContactPhone(dto.getPhone());
+        // 修改：设置多个4S店ID，将List<Long>转换为逗号分隔的字符串
+        if (dto.getDealerIds() != null && !dto.getDealerIds().isEmpty()) {
+            order.setDealerIds(dto.getDealerIds().stream()
+                                  .map(String::valueOf)
+                                  .collect(Collectors.joining(",")));
+        } else {
+            order.setDealerIds(null); // 或者空字符串，取决于业务需求
+        }
 
         // 2. 核心魔法：将前端的离散字段拼装成 message 存入数据库
         String typeStr = "price".equals(dto.getIntentType()) ? "询问底价" : "预约试驾";
@@ -97,6 +113,37 @@ public class IntentOrderServiceImpl extends ServiceImpl<IntentOrderMapper, Inten
                     order.setBrand("已删除/下架");
                     order.setModel("-");
                 }
+            }
+            // 修改：根据 dealerIds (逗号分隔字符串) 查询 4S 店信息并填充
+            if (StringUtils.isNotBlank(order.getDealerIds())) {
+                List<Long> dealerIdList = Arrays.stream(order.getDealerIds().split(","))
+                                                .map(Long::valueOf)
+                                                .collect(Collectors.toList());
+                StringBuilder dealerNames = new StringBuilder();
+                StringBuilder dealerAddresses = new StringBuilder();
+
+                for (Long dId : dealerIdList) {
+                    Dealer dealer = dealerService.getById(dId);
+                    if (dealer != null) {
+                        if (dealerNames.length() > 0) {
+                            dealerNames.append(", ");
+                            dealerAddresses.append(", ");
+                        }
+                        dealerNames.append(dealer.getName());
+                        dealerAddresses.append(dealer.getAddress());
+                    }
+                }
+
+                if (dealerNames.length() > 0) {
+                    order.setDealerName(dealerNames.toString());
+                    order.setDealerAddress(dealerAddresses.toString());
+                } else {
+                    order.setDealerName("未找到4S店");
+                    order.setDealerAddress("-");
+                }
+            } else {
+                order.setDealerName("未选择门店");
+                order.setDealerAddress("-");
             }
         }
 
