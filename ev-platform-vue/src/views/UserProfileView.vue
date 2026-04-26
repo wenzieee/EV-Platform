@@ -44,7 +44,11 @@ const getCoverMedia = (html) => {
   const img = doc.querySelector('img')
   if (img && img.getAttribute('src')) return { type: 'image', url: img.getAttribute('src') }
   const video = doc.querySelector('video')
-  if (video && video.getAttribute('src')) return { type: 'video', url: video.getAttribute('src') }
+  if (video) {
+    const source = video.querySelector('source')
+    const videoUrl = video.getAttribute('src') || (source ? source.getAttribute('src') : null)
+    if (videoUrl) return { type: 'video', url: videoUrl }
+  }
   return null
 }
 
@@ -697,7 +701,7 @@ onMounted(() => {
   object-fit: contain;
   display: block;
   border-radius: 8px;
-  background-color: #f5f7fa;
+  background-color: #000;
 }
 
 /* 缩略文本摘要样式 */

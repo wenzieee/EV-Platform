@@ -115,22 +115,34 @@ const goToPostDetail = (postId) => {
 
 const getSnippet = (html) => {
   if (!html) return ''
-  let text = html.replace(/<[^>]+>/g, '')
-  text = text.replace(/&nbsp;/ig, ' ')
-  return text.length > 120 ? text.slice(0, 120) + '...' : text
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  const paragraphs = Array.from(doc.querySelectorAll('p, div'))
+  for (const p of paragraphs) {
+    const text = p.textContent.trim()
+    if (text.length > 0) return text.length > 100 ? text.slice(0, 100) + '...' : text
+  }
+  const text = doc.body.textContent.trim().replace(/\s+/g, ' ')
+  return text.length > 100 ? text.slice(0, 100) + '...' : text
 }
 
 const getCoverMedia = (html) => {
   if (!html) return null
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
 
-  const imgMatch = html.match(/<img[^>]+src="([^">]+)"/)
-  if (imgMatch) {
-    return { type: 'image', url: imgMatch[1] }
+  const img = doc.querySelector('img')
+  if (img && img.getAttribute('src')) {
+    return { type: 'image', url: img.getAttribute('src') }
   }
 
-  const videoMatch = html.match(/<video[^>]+src="([^">]+)"/)
-  if (videoMatch) {
-    return { type: 'video', url: videoMatch[1] }
+  const video = doc.querySelector('video')
+  if (video) {
+    const source = video.querySelector('source')
+    const videoUrl = video.getAttribute('src') || (source ? source.getAttribute('src') : null)
+    if (videoUrl) {
+      return { type: 'video', url: videoUrl }
+    }
   }
 
   return null
@@ -300,14 +312,20 @@ onMounted(() => {
   margin-bottom: 12px;
   border-radius: 8px;
   overflow: hidden;
+  display: block;
 }
 .post-cover {
   width: 100%;
-  height: 250px;
-  object-fit: contain;
+  max-height: 500px;
+  object-fit: cover;
   display: block;
   border-radius: 8px;
-  background-color: #f5f7fa;
+  background-color: #fff;
+}
+
+video.post-cover {
+  object-fit: cover;
+  background-color: #fff;
 }
 
 .post-snippet {

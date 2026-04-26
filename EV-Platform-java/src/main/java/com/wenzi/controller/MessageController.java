@@ -63,4 +63,15 @@ public class MessageController {
             return Result.error("标记已读失败：" + e.getMessage());
         }
     }
+
+    @DeleteMapping("/{id}")
+    public Result<String> deleteMessage(@PathVariable Long id) {
+        try {
+            messageService.deleteMessage(id);
+            return Result.success("删除成功！");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("删除失败：" + e.getMessage());
+        }
+    }
 }

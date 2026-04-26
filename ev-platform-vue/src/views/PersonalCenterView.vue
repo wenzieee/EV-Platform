@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Calendar, Star, Van, MapLocation, Phone, Message, ArrowLeft, Bell, Camera } from '@element-plus/icons-vue'
+import { Calendar, Star, Van, MapLocation, Phone, Message, ArrowLeft, Bell, Camera, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElTabs, ElTabPane, ElButton, ElSkeleton, ElEmpty, ElTable, ElTableColumn, ElTag, ElPagination, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
 import { useRouter, useRoute } from 'vue-router'
@@ -97,9 +97,8 @@ const handleAvatarUpload = async (options) => {
       const updateRes = await request.post('/user/updateAvatar', { avatar: avatarUrl })
       if (updateRes.code === 200) {
         currentAvatar.value = avatarUrl
-        localStorage.setItem('avatar', avatarUrl) // 更新本地缓存
+        localStorage.setItem('avatar', avatarUrl)
         ElMessage.success('头像更新成功！')
-        // 刷新页面以同步导航栏头像
         setTimeout(() => { window.location.reload() }, 1000)
       } else {
         ElMessage.error(updateRes.msg || '头像保存失败')
@@ -135,7 +134,6 @@ const submitSettings = async () => {
       ElMessage.success('个人信息修改成功！')
       localStorage.setItem('nickname', settingsForm.nickname)
 
-      // 如果改了密码，强制退出重新登录
       if (settingsForm.password) {
         ElMessage.success('密码已修改，请重新登录')
         localStorage.removeItem('token')
@@ -143,7 +141,6 @@ const submitSettings = async () => {
           window.location.href = '/'
         }, 1500)
       } else {
-        // 没改密码刷新一下页面更新昵称
         setTimeout(() => { window.location.reload() }, 500)
       }
     } else {
@@ -167,6 +164,29 @@ const handleMessageClick = async (message) => {
       }
     } catch (error) {
       console.error('标记已读失败:', error)
+    }
+  }
+}
+
+const handleDeleteMessage = async (message, event) => {
+  event.stopPropagation()
+  try {
+    await ElMessageBox.confirm('确定要删除这条消息吗？', '删除确认', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    const res = await request.delete(`/message/${message.id}`)
+    if (res.code === 200) {
+      ElMessage.success('删除成功！')
+      fetchMessages()
+    } else {
+      ElMessage.error(res.msg || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除消息失败:', error)
+      ElMessage.error('删除失败，请稍后再试')
     }
   }
 }
@@ -205,7 +225,6 @@ const handleTabChange = (tab) => {
     case 'message':
       fetchMessages()
       break
-    // settings 不需要查数据
   }
 }
 
@@ -281,6 +300,7 @@ onMounted(() => {
             <el-empty v-if="appointments.length === 0" description="暂无预约记录" />
             <div v-else class="appointments-container">
               <el-table :data="appointments" border stripe style="width: 100%">
+                <el-table-column prop="id" label="ID" width="80"></el-table-column>
                 <el-table-column label="意向车型" min-width="140">
                   <template #default="scope">
                     {{ scope.row.brand }} {{ scope.row.model }}
@@ -376,8 +396,14 @@ onMounted(() => {
                   <el-icon :size="24"><Bell /></el-icon>
                 </div>
                 <div class="message-content">
-                  <div class="message-text">{{ message.content }}</div>
+                  <div class="message-text">
+                    <span v-if="message.intentId" class="message-intent-id">预约ID: {{ message.intentId }}</span>
+                    {{ message.content }}
+                  </div>
                   <div class="message-time">{{ formatTime(message.createTime) }}</div>
+                </div>
+                <div class="message-actions">
+                  <el-button type="danger" size="small" :icon="Delete" circle @click="handleDeleteMessage(message, $event)" />
                 </div>
                 <div class="message-status" v-if="message.isRead === 0">
                   <el-tag type="danger" size="small">未读</el-tag>
@@ -446,7 +472,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 原有的样式保持不变 */
 .user-profile-container { max-width: 1200px; margin: 0 auto; padding: 20px 0 60px 0; }
 .header { display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
 .back-btn { margin-right: 20px; }
@@ -468,66 +493,22 @@ onMounted(() => {
 .message-unread:hover { background-color: #ffeaea; }
 .message-read { background-color: #fafafa; border-left: 3px solid #dcdfe6; }
 .message-read:hover { background-color: #f0f0f0; }
-.message-icon { width: 48px; height: 48px; border-radius: 50%; background-color: #fff; display: flex; align-items: center; justify-content: center; margin-right: 16px; color: #409EFF; }
+.message-icon { width: 48px; height: 48px; border-radius: 50%; background-color: #fff; display: flex; align-items: center; justify-content: center; margin-right: 16px; color: #409EFF; flex-shrink: 0; }
 .message-unread .message-icon { color: #ff4d4f; }
-.message-content { flex: 1; }
+.message-content { flex: 1; min-width: 0; }
 .message-text { font-size: 15px; color: #333; margin-bottom: 4px; line-height: 1.5; }
+.message-intent-id { display: inline-block; background-color: #e6f7ff; color: #1890ff; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 8px; }
 .message-unread .message-text { font-weight: 600; color: #333; }
 .message-read .message-text { font-weight: 400; color: #999; }
 .message-time { font-size: 12px; color: #999; }
-.message-status { margin-left: 16px; }
+.message-status { margin-left: 16px; flex-shrink: 0; }
+.message-actions { margin-left: 8px; flex-shrink: 0; }
 
-/* 🚀 新增：账号设置专项样式 */
-.settings-container {
-  padding: 40px 20px;
-}
-
-.avatar-section {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.avatar-wrapper {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid #f0f0f0;
-}
-
-/* 遮罩层默认隐藏 */
-.edit-mask {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-  color: #fff;
-  font-size: 12px;
-  gap: 4px;
-}
-
-/* 鼠标悬浮时显示遮罩层 */
-.avatar-wrapper:hover .edit-mask {
-  opacity: 1;
-}
-
-.avatar-tip {
-  margin-top: 12px;
-  font-size: 13px;
-  color: #999;
-}
-
-.form-section {
-  background-color: #fafafa;
-  padding: 30px;
-  border-radius: 8px;
-  max-width: 600px;
-  margin: 0 auto;
-}
+.settings-container { padding: 40px 20px; }
+.avatar-section { text-align: center; margin-bottom: 40px; }
+.avatar-wrapper { position: relative; display: inline-block; cursor: pointer; border-radius: 50%; overflow: hidden; border: 2px solid #f0f0f0; }
+.edit-mask { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; color: #fff; font-size: 12px; gap: 4px; }
+.avatar-wrapper:hover .edit-mask { opacity: 1; }
+.avatar-tip { margin-top: 12px; font-size: 13px; color: #999; }
+.form-section { background-color: #fafafa; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; }
 </style>

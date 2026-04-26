@@ -232,7 +232,6 @@ const handleSubmit = async () => {
 .editor-wrapper {
   border: 1px solid #e4e7ed;
   border-radius: 8px;
-  overflow: hidden;
   z-index: 100;
   transition: border-color 0.2s;
 }
@@ -247,11 +246,15 @@ const handleSubmit = async () => {
 .toolbar {
   border-bottom: 1px solid #e4e7ed;
   background-color: #fafafa;
+  position: sticky;
+  top: 64px;
+  z-index: 101;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 }
 
 /* 编辑器内部高度控制 */
 .editor-content {
-  height: 450px;
-  overflow-y: hidden;
+  min-height: 450px;
 }
 </style>

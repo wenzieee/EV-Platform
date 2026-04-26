@@ -6,8 +6,9 @@ import com.wenzi.entity.Message;
 import java.util.List;
 
 public interface IMessageService {
-    void sendMessage(Long senderId, Long receiverId, String content);
+    void sendMessage(Long senderId, Long receiverId, String content, Long intentId);
     List<Message> getMyMessages(Long userId);
     Integer getUnreadCount(Long userId);
     void markAsRead(Long messageId);
+    void deleteMessage(Long messageId);
 }

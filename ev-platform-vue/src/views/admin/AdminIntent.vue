@@ -161,41 +161,41 @@ onMounted(() => {
       border 
       stripe 
       style="width: 100%; margin-top: 20px;"
-      height="calc(100vh - 240px)"
     >
-      <el-table-column prop="id" label="线索ID" width="80" align="center" />
-      <el-table-column prop="vehicleId" label="意向车型ID" width="100" align="center" />
-
-      <el-table-column prop="brand" label="意向品牌" width="100" align="center">
+      <el-table-column prop="id" label="ID" width="80" align="center" />
+      <el-table-column label="意向车型" min-width="140">
         <template #default="scope">
-          <el-tag type="info" size="small" v-if="scope.row.brand">{{ scope.row.brand }}</el-tag>
+          {{ scope.row.brand }} {{ scope.row.model }}
         </template>
       </el-table-column>
-      
-      <el-table-column prop="model" label="意向车型" min-width="150" align="center">
+      <el-table-column label="预约门店" min-width="160">
         <template #default="scope">
-          <strong>{{ scope.row.model }}</strong>
+          <span v-if="scope.row.dealerName">
+            <div v-for="(name, index) in scope.row.dealerName.split(',')" :key="index">{{ name.trim() }}</div>
+          </span>
+          <span v-else>未选择门店</span>
         </template>
       </el-table-column>
-      
-      <el-table-column prop="contactPhone" label="联系电话" width="140" align="center">
+      <el-table-column label="门店地址" min-width="200">
+        <template #default="scope">
+          <span v-if="scope.row.dealerAddress">
+            <div v-for="(address, index) in scope.row.dealerAddress.split(',')" :key="index">{{ address.trim() }}</div>
+          </span>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="contactPhone" label="联系电话" width="120" align="center">
         <template #default="scope">
           <span style="color: #409EFF; font-weight: bold;">{{ scope.row.contactPhone }}</span>
         </template>
       </el-table-column>
-      
-      <el-table-column prop="message" label="客户留言 (含姓名/城市等)" min-width="250" />
-      
+      <el-table-column prop="message" label="留言信息" min-width="150" />
       <el-table-column prop="createTime" label="提交时间" width="170" align="center" />
-
-      <el-table-column prop="status" label="处理状态" width="120" align="center" fixed="right">
+      <el-table-column prop="status" label="状态" width="100" align="center">
         <template #default="scope">
-          <el-tag :type="getStatusTagType(scope.row.status)" effect="dark">
-            {{ getStatusText(scope.row.status) }}
-          </el-tag>
+          <el-tag :type="getStatusTagType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
         </template>
       </el-table-column>
-      
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="scope">
           <!-- 待处理状态 -->
@@ -203,7 +203,6 @@ onMounted(() => {
             v-if="scope.row.status === 0" 
             size="small" 
             type="success" 
-            :icon="Check" 
             @click="handleProcess(scope.row)"
           >标记处理</el-button>
           

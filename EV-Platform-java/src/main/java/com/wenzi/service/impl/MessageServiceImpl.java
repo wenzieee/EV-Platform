@@ -17,13 +17,14 @@ public class MessageServiceImpl implements IMessageService {
     private MessageMapper messageMapper;
 
     @Override
-    public void sendMessage(Long senderId, Long receiverId, String content) {
+    public void sendMessage(Long senderId, Long receiverId, String content, Long intentId) {
         Message message = new Message();
         message.setSenderId(senderId);
         message.setReceiverId(receiverId);
         message.setContent(content);
         message.setIsRead(0);
         message.setCreateTime(LocalDateTime.now());
+        message.setIntentId(intentId);
         messageMapper.insert(message);
     }
 
@@ -49,5 +50,10 @@ public class MessageServiceImpl implements IMessageService {
         message.setId(messageId);
         message.setIsRead(1);
         messageMapper.updateById(message);
+    }
+
+    @Override
+    public void deleteMessage(Long messageId) {
+        messageMapper.deleteById(messageId);
     }
 }

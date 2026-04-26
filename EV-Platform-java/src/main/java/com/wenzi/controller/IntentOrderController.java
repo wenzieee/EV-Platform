@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/intent")
 public class IntentOrderController {
@@ -37,7 +39,27 @@ public class IntentOrderController {
         try {
             Long userId = Long.valueOf(JWTUtil.parseToken(token).getPayload("id").toString());
 
-            intentOrderService.submitIntent(dto, userId);
+            IntentOrder order = new IntentOrder();
+            order.setUserId(userId);
+            order.setVehicleId(dto.getVehicleId());
+            order.setContactPhone(dto.getPhone());
+            if (dto.getDealerIds() != null && !dto.getDealerIds().isEmpty()) {
+                order.setDealerIds(dto.getDealerIds().stream()
+                                      .map(String::valueOf)
+                                      .collect(Collectors.joining(",")));
+            } else {
+                order.setDealerIds(null);
+            }
+            String typeStr = "price".equals(dto.getIntentType()) ? "询问底价" : "预约试驾";
+            String formattedMessage = String.format("【%s】城市：%s，称呼：%s", typeStr, dto.getCity(), dto.getName());
+            order.setMessage(formattedMessage);
+            order.setStatus((byte)0);
+            intentOrderService.save(order);
+            
+            // 发送预约成功消息
+            String messageContent = "您好！您的预约已提交成功，销售顾问将尽快与您联系，请保持电话畅通！";
+            messageService.sendMessage(0L, userId, messageContent, order.getId());
+            
             return Result.success("提交成功，销售顾问将尽快与您联系！");
 
         } catch (Exception e) {
@@ -93,9 +115,9 @@ public class IntentOrderController {
             boolean success = intentOrderService.updateById(intentOrder);
             if (success) {
                 if (newStatus != null && !newStatus.equals(oldStatus) && newStatus != 0) {
-                    String messageContent = buildAutoMessage(newStatus, existingOrder);
-                    messageService.sendMessage(0L, existingOrder.getUserId(), messageContent);
-                }
+                String messageContent = buildAutoMessage(newStatus, existingOrder);
+                messageService.sendMessage(0L, existingOrder.getUserId(), messageContent, existingOrder.getId());
+            }
                 return Result.success("状态更新成功！");
             } else {
                 return Result.error("更新失败");
@@ -167,7 +189,7 @@ public class IntentOrderController {
 
             if (success) {
                 String messageContent = buildAutoMessage((byte) 3, existingOrder);
-                messageService.sendMessage(0L, existingOrder.getUserId(), messageContent);
+                messageService.sendMessage(0L, existingOrder.getUserId(), messageContent, existingOrder.getId());
                 return Result.success("预约已成功取消！");
             } else {
                 return Result.error("取消失败");

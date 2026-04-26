@@ -16,4 +16,5 @@ public class Message {
     private String content;
     private Integer isRead;
     private LocalDateTime createTime;
+    private Long intentId;
 }
