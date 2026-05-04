@@ -55,15 +55,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         this.save(user);
     }
 
+
     @Override
-    public String login(UserLoginDTO dto) {
+    public User login(UserLoginDTO dto) {
         // 1. 根据用户名查询用户
         User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername()));
         if (user == null) {
             throw new RuntimeException("用户名不存在！");
         }
 
-        // 🚀 核心修复：检查账号状态是否被封禁 (status: 0-禁用, 1-正常)
+        // 检查账号状态是否被封禁 (status: 0-禁用, 1-正常)
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw new RuntimeException("您的账号已被封禁，请联系管理员！");
         }
@@ -74,8 +75,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             throw new RuntimeException("账号或密码错误！");
         }
 
-        // 3. 登录成功，生成并返回 JWT Token
-        return JwtUtils.createToken(user.getId(), user.getUsername(), user.getRole());
+        // 🚀 核心修复：直接返回完整的 user 对象，不再在这里生成 Token
+        return user;
     }
 
     @Override

@@ -57,4 +57,18 @@ public interface ICommentService extends IService<Comment> {
      * @return 评论列表
      */
     IPage<CommentVO> getUserComments(Long userId, Integer pageNum, Integer pageSize, Long currentUserId);
+
+    /**
+     * 管理后台：分页查询评论列表
+     * @param queryDTO 查询条件
+     * @return 分页结果
+     */
+    IPage<CommentVO> adminPageQueryComments(CommentQueryDTO queryDTO);
+
+    /**
+     * 管理后台：删除评论
+     * @param commentId 评论ID
+     * @return 是否删除成功
+     */
+    boolean adminDeleteComment(Long commentId);
 }

@@ -104,4 +104,32 @@ public class CommentController {
         IPage<CommentVO> comments = commentService.getUserComments(userId, pageNum, pageSize, userId);
         return Result.success(comments);
     }
+
+    // =========================================================
+    // 管理后台评论管理接口
+    // =========================================================
+
+    /**
+     * 管理后台：分页查询评论列表
+     * @param queryDTO 查询条件
+     * @return 分页结果
+     */
+    @GetMapping("/admin/page")
+    public Result<IPage<CommentVO>> adminPageQueryComments(CommentQueryDTO queryDTO) {
+        // 在这里可以添加额外的管理员权限校验
+        IPage<CommentVO> page = commentService.adminPageQueryComments(queryDTO);
+        return Result.success(page);
+    }
+
+    /**
+     * 管理后台：删除评论
+     * @param commentId 评论ID
+     * @return 是否删除成功
+     */
+    @DeleteMapping("/admin/{commentId}")
+    public Result<Boolean> adminDeleteComment(@PathVariable Long commentId) {
+        // 在这里可以添加额外的管理员权限校验
+        boolean success = commentService.adminDeleteComment(commentId);
+        return success ? Result.success(true) : Result.error("删除失败");
+    }
 }

@@ -76,4 +76,18 @@ public interface IPostService extends IService<Post> {
      * @param increment 是否增加 (true为增加，false为减少)
      */
     void updateCollectCount(Long postId, boolean increment);
+
+    /**
+     * 管理后台：分页查询帖子列表
+     * @param queryDTO 查询条件
+     * @return 分页结果
+     */
+    IPage<PostVO> adminPageQueryPosts(PostQueryDTO queryDTO);
+
+    /**
+     * 管理后台：删除帖子
+     * @param postId 帖子ID
+     * @return 是否删除成功
+     */
+    boolean adminDeletePost(Long postId);
 }

@@ -103,4 +103,33 @@ public class PostController {
         IPage<PostVO> page = postService.pageQueryPosts(queryDTO, currentUserId);
         return Result.success(page);
     }
+
+    // =========================================================
+    // 管理后台帖子管理接口
+    // =========================================================
+
+    /**
+     * 管理后台：分页查询帖子列表
+     * @param queryDTO 查询条件
+     * @return 分页结果
+     */
+    @GetMapping("/admin/page")
+    public Result<IPage<PostVO>> adminPageQueryPosts(PostQueryDTO queryDTO) {
+        // 在这里可以添加额外的管理员权限校验，例如通过UserContext.getUserRole() == 0 (超级管理员)
+        // 鉴权逻辑一般在拦截器或切面中处理
+        IPage<PostVO> page = postService.adminPageQueryPosts(queryDTO);
+        return Result.success(page);
+    }
+
+    /**
+     * 管理后台：删除帖子
+     * @param postId 帖子ID
+     * @return 是否删除成功
+     */
+    @DeleteMapping("/admin/{postId}")
+    public Result<Boolean> adminDeletePost(@PathVariable Long postId) {
+        // 在这里可以添加额外的管理员权限校验
+        boolean success = postService.adminDeletePost(postId);
+        return success ? Result.success(true) : Result.error("删除失败");
+    }
 }

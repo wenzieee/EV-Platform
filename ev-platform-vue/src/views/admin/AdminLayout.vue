@@ -86,6 +86,16 @@ onMounted(() => {
           <span>用户统计</span>
         </el-menu-item>
 
+        <el-menu-item index="/admin/post-management">
+          <el-icon><List /></el-icon>
+          <span>帖子管理</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/comment-management">
+          <el-icon><List /></el-icon>
+          <span>评论管理</span>
+        </el-menu-item>
+
       </el-menu>
     </el-aside>
 

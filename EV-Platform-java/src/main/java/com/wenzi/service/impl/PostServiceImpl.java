@@ -241,4 +241,58 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements IP
             this.updateById(post);
         }
     }
+
+    @Override
+    public IPage<PostVO> adminPageQueryPosts(PostQueryDTO queryDTO) {
+        Page<Post> page = new Page<>(queryDTO.getPageNum(), queryDTO.getPageSize());
+
+        LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
+        // 管理后台可以查询所有状态的帖子，包括已删除的 (status = 0)
+        // 如果queryDTO中指定了status，则按指定status查询，否则查询所有非-1状态（-1保留给彻底删除）
+        if (queryDTO.getStatus() != null) {
+            wrapper.eq(Post::getStatus, queryDTO.getStatus());
+        } else {
+            wrapper.ne(Post::getStatus, -1); // 排除彻底删除的
+        }
+
+        wrapper.eq(queryDTO.getUserId() != null, Post::getUserId, queryDTO.getUserId());
+        wrapper.like(queryDTO.getTitle() != null, Post::getTitle, queryDTO.getTitle());
+        wrapper.orderByDesc(Post::getCreateTime);
+
+        Page<Post> postPage = this.page(page, wrapper);
+
+        // 转换 Po 到 VO
+        return postPage.convert(post -> {
+            PostVO vo = new PostVO();
+            BeanUtils.copyProperties(post, vo);
+            if (post.getMediaUrls() != null) {
+                vo.setMediaUrlList(JSON.parseArray(post.getMediaUrls(), String.class));
+            }
+
+            // 查询用户信息并设置 username 和 avatar
+            User user = userMapper.selectById(post.getUserId());
+            if (user != null) {
+                vo.setUsername(user.getUsername());
+                vo.setNickname(user.getNickname());
+                vo.setAvatar(user.getAvatar());
+            }
+
+            // 管理后台查询不需要设置点赞、收藏、关注状态
+            vo.setLiked(false);
+            vo.setCollected(false);
+            vo.setIsFollowed(false);
+
+            return vo;
+        });
+    }
+
+    @Override
+    public boolean adminDeletePost(Long postId) {
+        // 建议这里做逻辑删除（更新status=-1，表示彻底删除，不可恢复），而不是物理删除，以免丢失社区历史数据
+        // 如果要实现回收站功能，可以将status设置为0（已删除，可恢复）
+        Post post = new Post();
+        post.setId(postId);
+        post.setStatus(-1); // -1 表示彻底删除，管理员操作
+        return this.updateById(post);
+    }
 }

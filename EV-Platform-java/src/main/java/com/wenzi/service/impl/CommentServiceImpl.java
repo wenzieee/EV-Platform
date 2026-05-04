@@ -403,4 +403,95 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             return vo;
         });
     }
+
+    @Override
+    public IPage<CommentVO> adminPageQueryComments(CommentQueryDTO queryDTO) {
+        // 1. 参数校验
+        if (queryDTO == null) {
+            throw new IllegalArgumentException("查询参数不合法");
+        }
+        // 分页参数默认值
+        int pageNum = queryDTO.getPageNum() == null ? 1 : queryDTO.getPageNum();
+        int pageSize = queryDTO.getPageSize() == null ? 10 : queryDTO.getPageSize();
+        Page<Comment> page = new Page<>(pageNum, pageSize);
+
+        // 2. 构建查询条件
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        // 管理后台可以查询所有状态的评论，包括已删除的 (status = 0)
+        // 如果queryDTO中指定了status，则按指定status查询，否则查询所有非-1状态（-1保留给彻底删除）
+        if (queryDTO.getStatus() != null) {
+            wrapper.eq(Comment::getStatus, queryDTO.getStatus());
+        } else {
+            wrapper.ne(Comment::getStatus, -1); // 排除彻底删除的
+        }
+
+        wrapper.eq(queryDTO.getPostId() != null, Comment::getPostId, queryDTO.getPostId());
+        wrapper.eq(queryDTO.getUserId() != null, Comment::getUserId, queryDTO.getUserId());
+        wrapper.like(queryDTO.getContent() != null, Comment::getContent, queryDTO.getContent());
+        wrapper.orderByDesc(Comment::getCreateTime);
+
+        // 3. 分页查询
+        IPage<Comment> commentPage = commentMapper.selectPage(page, wrapper);
+
+        // 4. 转换为VO
+        return commentPage.convert(comment -> {
+            CommentVO vo = new CommentVO();
+            BeanUtils.copyProperties(comment, vo);
+
+            // 补充评论者信息
+            User user = userMapper.selectById(comment.getUserId());
+            if (user != null) {
+                vo.setUsername(user.getUsername());
+                vo.setNickname(user.getNickname());
+                vo.setAvatar(user.getAvatar());
+            }
+
+            // 补充父评论者信息
+            if (comment.getParentId() != null && comment.getParentId() != 0) {
+                Comment parentComment = commentMapper.selectById(comment.getParentId());
+                if (parentComment != null && parentComment.getStatus() != -1) { // 排除彻底删除的父评论
+                    User parentUser = userMapper.selectById(parentComment.getUserId());
+                    if (parentUser != null) {
+                        vo.setParentUsername(parentUser.getNickname() != null ? parentUser.getNickname() : parentUser.getUsername());
+                    }
+                }
+            }
+
+            // 补充帖子标题
+            Post post = postMapper.selectById(comment.getPostId());
+            if (post != null) {
+                vo.setPostTitle(post.getTitle());
+            }
+            // 管理后台查询不需要设置点赞状态
+            vo.setLiked(false);
+            return vo;
+        });
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean adminDeleteComment(Long commentId) {
+        // 1. 参数校验
+        if (commentId == null) {
+            throw new IllegalArgumentException("评论ID不能为空");
+        }
+
+        // 2. 查询评论是否存在
+        Comment comment = commentMapper.selectById(commentId);
+        if (comment == null || comment.getStatus() == -1) { // 已经彻底删除
+            return false;
+        }
+
+        // 3. 逻辑删除（修改状态为-1，表示管理员彻底删除）
+        comment.setStatus(-1); // -1 表示管理员彻底删除
+        // comment.setUpdateTime(LocalDateTime.now()); // 补充更新时间
+        boolean success = commentMapper.updateById(comment) > 0;
+
+        // 4. 如果是首次删除 (status从1到-1)，则更新帖子评论数
+        if (success && comment.getStatus() == 1) { // 只有正常状态的评论被删除才减少计数
+            postService.updateCommentCount(comment.getPostId(), false);
+        }
+
+        return success;
+    }
 }

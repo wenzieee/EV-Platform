@@ -21,8 +21,8 @@ public interface IUserService extends IService<User> {
     // 注册业务
     void register(UserRegisterDTO dto);
 
-    // 登录业务，返回 Token
-    String login(UserLoginDTO dto);
+    // 登录业务，返回 User 对象
+    User login(UserLoginDTO dto);
 
     // 🚀 新增：分页查询用户
     Page<User> pageQuery(UserQueryDTO dto);

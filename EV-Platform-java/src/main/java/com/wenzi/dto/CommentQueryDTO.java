@@ -14,5 +14,6 @@ public class CommentQueryDTO extends PageQuery {
 
     private Long userId; // 评论者ID
     private Long parentId; // 查询某个父评论下的回复 (如果是0，则查询所有直接评论)
+    private String content; // 评论内容关键词
     private Integer status; // 评论状态
 }

@@ -10,12 +10,15 @@ import com.wenzi.dto.UserQueryDTO;
 import com.wenzi.dto.UserRegisterDTO;
 import com.wenzi.entity.User;
 import com.wenzi.service.IUserService;
+import com.wenzi.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.wenzi.dto.UserStatsDTO;
 
 //import javax.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
@@ -49,10 +52,24 @@ public class UserController {
      * 用户登录接口
      */
     @PostMapping("/login")
-    public Result<String> login(@RequestBody UserLoginDTO dto) {
+    public Result<Map<String, Object>> login(@RequestBody UserLoginDTO dto) {
         try {
-            String token = userService.login(dto);
-            return Result.success("登录成功", token);
+            // 1. 调用 Service 执行登录逻辑，获取完整的用户对象
+            User user = userService.login(dto);
+
+            // 2. 使用 JwtUtils 生成 Token
+            String token = JwtUtils.createToken(user.getId(), user.getUsername(), user.getRole());
+
+            // 3. 将前端需要的全部数据封装进 Map
+            Map<String, Object> map = new HashMap<>();
+            map.put("token", token);
+            map.put("username", user.getUsername());
+            map.put("nickname", user.getNickname());
+            map.put("role", user.getRole());
+            map.put("avatar", user.getAvatar());
+
+            // 4. 返回成功状态和 Map 对象
+            return Result.success("登录成功", map);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
