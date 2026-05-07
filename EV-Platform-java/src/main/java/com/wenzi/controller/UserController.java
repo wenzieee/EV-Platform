@@ -194,5 +194,29 @@ public class UserController {
         }
     }
 
+    /**
+     * 更新用户头像
+     */
+    @PostMapping("/updateAvatar")
+    public Result<String> updateAvatar(@RequestBody Map<String, String> data, HttpServletRequest request) {
+        try {
+            String token = request.getHeader("token");
+            if (StrUtil.isBlank(token)) return Result.error("未登录");
+            
+            Long userId = Long.valueOf(JWTUtil.parseToken(token).getPayload("id").toString());
+            String avatar = data.get("avatar");
+            
+            User user = userService.getById(userId);
+            if (user == null) return Result.error("用户不存在");
+            
+            user.setAvatar(avatar);
+            userService.updateById(user);
+            
+            return Result.success("头像更新成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("服务器异常：" + e.getMessage());
+        }
+    }
 
 }

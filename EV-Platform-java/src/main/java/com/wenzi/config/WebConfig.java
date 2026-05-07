@@ -52,7 +52,6 @@ public class WebConfig implements WebMvcConfigurer {
 
                         // 3. 社区内容展示 (游客可用)
                         "/post/page",
-                        "/post/*",         // 匹配 /post/{postId} 帖子详情
                         "/comment/page",
                         "/comment/*",      // 匹配 /comment/{commentId} 评论详情
 

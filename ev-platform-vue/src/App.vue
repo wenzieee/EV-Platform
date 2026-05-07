@@ -73,6 +73,7 @@ const handleLogout = () => {
   localStorage.removeItem('token')
   localStorage.removeItem('username')
   localStorage.removeItem('nickname')
+  localStorage.removeItem('avatar')
   isLoggedIn.value = false
   currentUsername.value = ''
   currentNickname.value = ''
@@ -151,13 +152,16 @@ const handleLoginSubmit = async () => {
       // 如果没有昵称，则默认使用账号名兜底
       localStorage.setItem('nickname', nickname || loginData.username)
       localStorage.setItem('role', userRole)
+      // 存储头像
+      localStorage.setItem('avatar', loginData.avatar || '')
 
       // 保存用户信息到本地存储
       const userInfo = {
         id: null,
         username: loginData.username,
         nickname: nickname || loginData.username, // 顺便把昵称也存进去
-        role: userRole
+        role: userRole,
+        avatar: loginData.avatar || ''
       }
       localStorage.setItem('userInfo', JSON.stringify(userInfo))
 

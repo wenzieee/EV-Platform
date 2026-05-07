@@ -20,6 +20,20 @@ public class LoginInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        // 👇 新增：帖子详情 GET 请求允许游客访问
+        String requestUri = request.getRequestURI();
+        if ("GET".equals(request.getMethod()) && requestUri.matches("/post/\\d+")) {
+            // 如果有 token，仍然设置用户上下文
+            String token = request.getHeader("token");
+            if (token != null && JwtUtils.verifyToken(token)) {
+                Long userId = JwtUtils.getUserId(token);
+                if (userId != null) {
+                    UserContext.setUserId(userId);
+                }
+            }
+            return true; // 放行，允许游客访问帖子详情
+        }
+
         // 1. 从请求头拿到 token
         String token = request.getHeader("token");
 
