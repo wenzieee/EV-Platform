@@ -19,6 +19,20 @@ const total = ref(0)
 
 const queryParams = ref({ current: 1, size: 10 })
 
+const formatPrice = (minPrice, maxPrice) => {
+  // 将数据转换为数字类型
+  const min = parseFloat(minPrice)
+  const max = parseFloat(maxPrice)
+  
+  if (isNaN(min) && isNaN(max)) {
+    return '暂无'
+  }
+  if (isNaN(max) || min === max) {
+    return min
+  }
+  return `${min}-${max}`
+}
+
 // ====== 账号设置相关状态 ======
 const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 const currentAvatar = ref(localStorage.getItem('avatar') || defaultAvatar)
@@ -306,6 +320,11 @@ onMounted(() => {
                     {{ scope.row.brand }} {{ scope.row.model }}
                   </template>
                 </el-table-column>
+                <el-table-column label="配置" width="80">
+                  <template #default="scope">
+                    {{ scope.row.trimName || '-' }}
+                  </template>
+                </el-table-column>
                 <el-table-column label="预约门店" min-width="160">
                   <template #default="scope">
                     <span v-if="scope.row.dealerName">
@@ -371,7 +390,7 @@ onMounted(() => {
                   </div>
                   <div class="card-info">
                     <h4 class="card-title">{{ favorite.vehicleBrand }} {{ favorite.vehicleModel }}</h4>
-                    <p class="card-price">{{ favorite.vehiclePrice }}万</p>
+                    <p class="card-price">{{ formatPrice(favorite.minPrice, favorite.maxPrice) }}万</p>
                   </div>
                 </div>
               </div>

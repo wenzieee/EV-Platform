@@ -1,3 +1,10 @@
+<style>
+/* 隐藏页面整体滚动条 */
+.page-scroll-hide {
+  overflow: hidden;
+}
+</style>
+
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -13,6 +20,8 @@ const activeTab = ref('price')
 const vehicle = ref({}) // 车辆信息
 const dealers = ref([]) // 新增：存放附近的4S店列表
 const locationLoading = ref(false) // 新增：地理位置加载状态
+const trimId = ref(null) // 选中的配置ID
+const trimName = ref('') // 选中的配置名称
 
 // 表单数据
 const form = reactive({
@@ -29,7 +38,8 @@ const fetchVehicle = async () => {
   try {
     const res = await request.get(`/vehicle/${route.params.id}`)
     if (res.code === 200) {
-      vehicle.value = res.data
+      // 后端返回的是 VehicleDetailDTO，包含 vehicle 和 trims 字段
+      vehicle.value = res.data.vehicle || res.data
       // 在获取到车辆品牌后，再尝试获取用户位置并加载附近经销商
       if (vehicle.value.brand) {
         getUserLocation()
@@ -101,6 +111,8 @@ const handleSubmit = async () => {
     // 组装要发给后端的数据
     const postData = {
       vehicleId: vehicle.value.id,
+      trimId: trimId.value, // 选中的配置ID
+      trimName: trimName.value, // 选中的配置名称
       intentType: activeTab.value, // 'price' 或 'testdrive'
       city: form.city,
       name: form.name,
@@ -132,7 +144,23 @@ onMounted(() => {
   if (route.query.type) {
     activeTab.value = route.query.type
   }
+  // 从 URL 参数中获取配置信息
+  if (route.query.trimId) {
+    trimId.value = parseInt(route.query.trimId)
+  }
+  if (route.query.trimName) {
+    trimName.value = route.query.trimName
+  }
   fetchVehicle()
+  
+  // 隐藏页面滚动条
+  document.body.style.overflow = 'hidden'
+})
+
+// 页面卸载时恢复滚动
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  document.body.style.overflow = ''
 })
 </script>
 
@@ -160,8 +188,8 @@ onMounted(() => {
               onerror="this.src='/logo.jpg'"
             />
             <div class="snippet-info">
-              <div class="snippet-title">{{ vehicle.brand }} {{ vehicle.model }}</div>
-              <div class="snippet-subtitle">2026款 官方指导价({{ vehicle.price }}万)</div>
+              <div class="snippet-title">{{ vehicle.brand }} {{ vehicle.model }} {{ trimName || '' }}</div>
+              <div class="snippet-subtitle">2026款 官方指导价({{ vehicle.minPrice && vehicle.maxPrice && vehicle.minPrice !== vehicle.maxPrice ? `${vehicle.minPrice}-${vehicle.maxPrice}` : (vehicle.minPrice || vehicle.maxPrice || vehicle.price) }}万)</div>
             </div>
           </div>
 
@@ -251,13 +279,15 @@ onMounted(() => {
 <style scoped>
 .intent-container {
   max-width: 1200px;
-  margin: 0 auto 60px;
+  margin: 0 auto 40px;
   padding-top: 40px;
-  min-height: 80vh; /* 保证容器有最小高度，避免内容过少时底部上移 */
+  height: calc(100vh - 140px); /* 固定高度，减去顶部导航和底部边距 */
+  overflow: hidden; /* 禁止页面滚动 */
 }
 
 .main-content-row {
-  align-items: stretch; /* 确保 ElCol 子元素等高 */
+  align-items: flex-start; /* 顶部对齐 */
+  height: 100%;
 }
 
 .form-card {
@@ -265,7 +295,6 @@ onMounted(() => {
   padding: 50px 80px;
   border-radius: 8px;
   box-shadow: 0 2px 16px rgba(0,0,0,0.05);
-  min-height: 100%; /* 确保卡片撑满高度 */
 }
 
 .dealer-list-sidebar {
@@ -273,7 +302,8 @@ onMounted(() => {
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 2px 16px rgba(0,0,0,0.05);
-  /* min-height: 100%;  Removed to allow natural height */
+  max-height: calc(100vh - 140px); /* 固定高度 */
+  overflow-y: auto; /* 经销商列表可单独滚动 */
   display: flex;
   flex-direction: column;
 }

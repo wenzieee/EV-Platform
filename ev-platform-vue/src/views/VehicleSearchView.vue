@@ -76,7 +76,11 @@ watch(() => route.query.keyword, () => {
           </div>
           <div class="card-info">
             <h4 class="card-title">{{ item.brand }} {{ item.model }}</h4>
-            <p class="card-price">{{ item.price }}万</p>
+            <p class="card-price">
+  <template v-if="item.minPrice && item.maxPrice">{{ item.minPrice }}-{{ item.maxPrice }}万</template>
+  <template v-else-if="item.price">{{ item.price }}万</template>
+  <template v-else>-</template>
+</p>
           </div>
         </div>
       </div>

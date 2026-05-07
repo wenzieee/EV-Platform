@@ -40,9 +40,13 @@ public class Vehicle implements Serializable {
     @TableField("model")
     private String model;
 
-    @ApiModelProperty("指导价格(万元)")
-    @TableField("price")
-    private BigDecimal price;
+    @ApiModelProperty("最低指导价格(万元)")
+    @TableField("min_price")
+    private BigDecimal minPrice;
+
+    @ApiModelProperty("最高指导价格(万元)")
+    @TableField("max_price")
+    private BigDecimal maxPrice;
 
     @ApiModelProperty("续航里程(km)")
     @TableField("range_km")

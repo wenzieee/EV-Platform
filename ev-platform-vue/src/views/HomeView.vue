@@ -9,6 +9,16 @@ const goToDetail = (id) => {
   router.push(`/vehicle/${id}`)
 }
 
+const formatPrice = (minPrice, maxPrice) => {
+  if (!minPrice && !maxPrice) {
+    return '暂无'
+  }
+  if (!maxPrice || minPrice === maxPrice) {
+    return minPrice
+  }
+  return `${minPrice}-${maxPrice}`
+}
+
 // 存放最新发布车辆的数据 (给轮播图用)
 const vehicleList = ref([])
 // 存放热门推荐车辆的数据 (给卡片用)
@@ -81,7 +91,7 @@ onMounted(() => {
               </p>
               <div class="banner-price">
                 <span class="price-symbol">￥</span>
-                <span class="price-num">{{ item.price }}</span>
+                <span class="price-num">{{ formatPrice(item.minPrice, item.maxPrice) }}</span>
                 <span class="price-unit">万</span>
               </div>
               <el-button type="primary" size="large" round class="view-btn">立即探索</el-button>
@@ -109,7 +119,7 @@ onMounted(() => {
           
           <div class="card-info">
             <h4 class="card-title">{{ item.brand }} {{ item.model }}</h4>
-            <p class="card-price">{{ item.price }}万</p>
+            <p class="card-price">{{ formatPrice(item.minPrice, item.maxPrice) }}万</p>
           </div>
         </div>
       </div>
@@ -243,7 +253,8 @@ onMounted(() => {
   font-weight: 500;
 }
 .card-price {
-  font-size: 18px;
-  color: #ff6666; 
+  font-size: 16px;
+  color: #ff6666;
+  font-weight: bold;
 }
 </style>

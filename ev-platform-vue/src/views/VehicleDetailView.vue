@@ -3,46 +3,52 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '../utils/request'
 import { ElMessage } from 'element-plus'
-import { StarFilled, Location, Bicycle, Loading, ArrowDown, ArrowUp } from '@element-plus/icons-vue' // 新增 ArrowDown, ArrowUp
+import { StarFilled, Location, Bicycle, Loading, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 
-// 跳转到留资页
-const goToIntent = (type) => {
+const goToIntent = (type, trimId = null) => {
   if (!vehicle.value.id) return
-  router.push({ path: `/intent/${vehicle.value.id}`, query: { type: type } })
+  const query = { type: type }
+  if (trimId) {
+    query.trimId = trimId
+    query.trimName = selectedTrim.value?.trimName || ''
+  }
+  router.push({ path: `/intent/${vehicle.value.id}`, query })
 }
 
 const vehicle = ref({})
+const trims = ref([])
+const selectedTrim = ref(null)
 const isFavorited = ref(false)
 const dealers = ref([])
 const locationLoading = ref(false)
 
-// 🚀 新增：控制是否展开全部门店的状态
 const isExpanded = ref(false)
 
-// 🚀 新增：计算属性，决定当前页面真正渲染哪些门店
 const displayedDealers = computed(() => {
   if (isExpanded.value) {
-    return dealers.value // 如果是展开状态，返回全部
+    return dealers.value
   }
-  return dealers.value.slice(0, 4) // 如果是收起状态，只截取前 4 个
+  return dealers.value.slice(0, 4)
 })
 
-// 🚀 新增：切换展开/收起状态的方法
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value
 }
 
-// 根据 URL 里的 id 向后端请求车辆详情
 const fetchVehicleDetail = async () => {
   const vehicleId = route.params.id
   if (!vehicleId) return
   try {
     const res = await request.get(`/vehicle/${vehicleId}`)
     if (res.code === 200) {
-      vehicle.value = res.data
+      vehicle.value = res.data.vehicle
+      trims.value = res.data.trims || []
+      if (trims.value.length > 0) {
+        selectedTrim.value = trims.value[0]
+      }
       if (vehicle.value.brand) {
         getUserLocation()
       }
@@ -51,6 +57,10 @@ const fetchVehicleDetail = async () => {
     console.error('获取车辆详情失败:', error)
     ElMessage.error('获取车辆详情失败')
   }
+}
+
+const selectTrim = (trim) => {
+  selectedTrim.value = trim
 }
 
 const navigateToDealer = (dealer) => {
@@ -62,7 +72,6 @@ const navigateToDealer = (dealer) => {
   }
 };
 
-// 获取用户地理位置
 const getUserLocation = () => {
   locationLoading.value = true
   if (navigator.geolocation) {
@@ -85,10 +94,8 @@ const getUserLocation = () => {
   }
 }
 
-// 获取附近经销商
 const fetchNearestDealers = async (brand, lng, lat) => {
   try {
-    // 选做：你可以把后端 limit 稍微调大一点（比如调成 10），这样前端才有折叠的意义
     const res = await request.get(`/dealer/nearest`, { params: { brand, lng, lat } })
     if (res.code === 200) {
       dealers.value = res.data
@@ -101,7 +108,6 @@ const fetchNearestDealers = async (brand, lng, lat) => {
   }
 }
 
-// 检查当前车辆是否被收藏
 const checkFavoriteStatus = async () => {
   const vehicleId = route.params.id
   if (!vehicleId) return
@@ -115,7 +121,6 @@ const checkFavoriteStatus = async () => {
   }
 }
 
-// 切换收藏状态
 const toggleFavorite = async () => {
   const vehicleId = route.params.id
   if (!vehicleId) return
@@ -172,7 +177,17 @@ onMounted(() => {
 
             <div class="car-price">
               <span class="label">指导价：</span>
-              <span class="price-num">{{ vehicle.price }}</span>
+              <template v-if="vehicle.minPrice && vehicle.maxPrice">
+                <span class="price-num">{{ vehicle.minPrice }}</span>
+                <span class="price-range">-</span>
+                <span class="price-num">{{ vehicle.maxPrice }}</span>
+              </template>
+              <template v-else-if="vehicle.minPrice">
+                <span class="price-num">{{ vehicle.minPrice }}</span>
+              </template>
+              <template v-else-if="vehicle.price">
+                <span class="price-num">{{ vehicle.price }}</span>
+              </template>
               <span class="unit">万元</span>
             </div>
 
@@ -186,13 +201,59 @@ onMounted(() => {
               </el-descriptions-item>
             </el-descriptions>
 
-            <div class="action-bar">
-              <el-button type="primary" size="large" class="action-btn" @click="goToIntent('price')">询问底价</el-button>
-              <el-button type="primary" size="large" class="action-btn" @click="goToIntent('testdrive')">预约试驾</el-button>
-            </div>
           </div>
         </el-col>
       </el-row>
+    </div>
+
+    <div v-if="trims.length > 0" class="trim-selection">
+      <h3>选择配置版本</h3>
+      <div class="trim-list">
+        <el-card
+          v-for="trim in trims"
+          :key="trim.id"
+          class="trim-card"
+          :class="{ 'is-selected': selectedTrim?.id === trim.id }"
+          shadow="hover"
+          @click="selectTrim(trim)"
+        >
+          <div class="trim-header">
+            <span class="trim-name">{{ trim.trimName }}</span>
+            <span class="trim-price">{{ trim.price }} 万元</span>
+          </div>
+          <div class="trim-specs">
+            <span v-if="trim.rangeKm">{{ trim.rangeKm }}km 续航</span>
+            <span v-if="trim.batteryCapacity">| {{ trim.batteryCapacity }}kWh 电池</span>
+            <span v-if="trim.motorPower">| {{ trim.motorPower }}kW 功率</span>
+          </div>
+        </el-card>
+      </div>
+    </div>
+
+    <div v-if="selectedTrim" class="selected-trim-detail">
+      <div class="trim-header">
+        <h3>配置详情</h3>
+        <div class="trim-action-bar">
+          <el-button type="primary" size="small" class="action-btn" @click="goToIntent('price', selectedTrim?.id)">询问底价</el-button>
+          <el-button type="primary" size="small" class="action-btn" @click="goToIntent('testdrive', selectedTrim?.id)">预约试驾</el-button>
+        </div>
+      </div>
+      <el-descriptions :column="2" border class="trim-detail">
+        <el-descriptions-item label="配置名称">{{ selectedTrim.trimName }}</el-descriptions-item>
+        <el-descriptions-item label="指导价格">{{ selectedTrim.price }} 万元</el-descriptions-item>
+        <el-descriptions-item label="续航里程">{{ selectedTrim.rangeKm }} km</el-descriptions-item>
+        <el-descriptions-item label="电池容量">{{ selectedTrim.batteryCapacity }} kWh</el-descriptions-item>
+        <el-descriptions-item label="电机功率">{{ selectedTrim.motorPower }} kW</el-descriptions-item>
+        <el-descriptions-item label="最高时速">{{ selectedTrim.maxSpeed }} km/h</el-descriptions-item>
+        <el-descriptions-item label="百公里加速">{{ selectedTrim.accelerationTime }} 秒</el-descriptions-item>
+        <el-descriptions-item label="快充时间">{{ selectedTrim.chargeTime }} 分钟(0-80%)</el-descriptions-item>
+        <el-descriptions-item label="车身颜色">{{ selectedTrim.colors || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="驱动方式">
+          <el-tag type="success">
+            {{ selectedTrim.driveType || '-' }}
+          </el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
     </div>
 
     <div class="dealer-recommendation">
@@ -311,7 +372,6 @@ onMounted(() => {
   fill: gold;
 }
 
-
 .car-price {
   margin-bottom: 30px;
   background: #fff5f5;
@@ -321,6 +381,7 @@ onMounted(() => {
 }
 .car-price .label { font-size: 16px; color: #666; }
 .car-price .price-num { font-size: 36px; font-weight: bold; font-style: italic; }
+.car-price .price-range { font-size: 24px; margin: 0 5px; }
 .car-price .unit { font-size: 16px; margin-left: 5px; }
 
 .param-list {
@@ -339,6 +400,104 @@ onMounted(() => {
   font-weight: bold;
   height: 50px;
   border-radius: 6px;
+}
+
+.trim-selection {
+  margin-top: 30px;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.trim-selection h3 {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.trim-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.trim-card {
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.trim-card:hover {
+  border-color: #409eff;
+}
+
+.trim-card.is-selected {
+  border-color: #409eff;
+  background: #f0f5ff;
+}
+
+.trim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.trim-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.trim-price {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff4d4f;
+}
+
+.trim-specs {
+  font-size: 14px;
+  color: #666;
+}
+
+.selected-trim-detail {
+  margin-top: 30px;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.trim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.trim-header h3 {
+  font-size: 20px;
+  color: #333;
+  margin: 0;
+  font-weight: 600;
+}
+
+.trim-action-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.trim-action-bar .action-btn {
+  padding: 5px 14px;
+  font-size: 13px;
+  height: auto;
+  line-height: 1.6;
+}
+
+.trim-detail {
+  margin-top: 0;
 }
 
 .dealer-recommendation {
@@ -402,7 +561,6 @@ onMounted(() => {
   width: 100%;
 }
 
-/* 🚀 新增：展开折叠按钮的容器样式 */
 .expand-btn-wrapper {
   margin-top: 20px;
   display: flex;

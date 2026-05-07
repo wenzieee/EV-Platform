@@ -2,13 +2,17 @@ package com.wenzi.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wenzi.common.Result;
+import com.wenzi.dto.VehicleDetailDTO;
 import com.wenzi.dto.VehicleQueryDTO;
 import com.wenzi.dto.VehicleStatsDTO;
 import com.wenzi.entity.Vehicle;
+import com.wenzi.entity.VehicleTrim;
 import com.wenzi.service.IVehicleService;
+import com.wenzi.service.IVehicleTrimService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,9 +27,11 @@ import java.util.List;
 @RequestMapping("/vehicle")
 public class VehicleController {
 
-    // 注入车辆业务逻辑层接口
     @Autowired
     private IVehicleService vehicleService;
+
+    @Autowired
+    private IVehicleTrimService vehicleTrimService;
 
     /**
      * 查询所有车辆列表数据
@@ -33,10 +39,7 @@ public class VehicleController {
      */
     @GetMapping("/list")
     public Result<List<Vehicle>> list() {
-        // 调用 MyBatis-Plus 封装好的 list() 方法，直接查询 biz_vehicle 表所有数据
         List<Vehicle> vehicleList = vehicleService.list();
-
-        // 使用我们刚刚封装的统一返回类，将结果包裹起来返回给前端
         return Result.success(vehicleList);
     }
 
@@ -51,13 +54,18 @@ public class VehicleController {
     }
 
     /**
-     * 根据 ID 查询车辆详情
+     * 根据 ID 查询车辆详情（包含配置列表）
      * 访问路径: GET http://localhost:8080/vehicle/{id}
      */
     @GetMapping("/{id}")
-    public Result<Vehicle> getById(@PathVariable Integer id) {
+    public Result<VehicleDetailDTO> getById(@PathVariable Long id) {
         Vehicle vehicle = vehicleService.getById(id);
-        return Result.success(vehicle);
+        if (vehicle == null) {
+            return Result.error("车辆不存在");
+        }
+        List<VehicleTrim> trims = vehicleTrimService.getTrimsByVehicleId(id);
+        VehicleDetailDTO detail = new VehicleDetailDTO(vehicle, trims);
+        return Result.success(detail);
     }
 
     /**
@@ -81,33 +89,65 @@ public class VehicleController {
     }
 
     /**
-     * 新增车辆接口
+     * 根据车辆ID获取车型配置列表
+     * 访问路径: GET http://localhost:8080/vehicle/trims/{vehicleId}
+     */
+    @GetMapping("/trims/{vehicleId}")
+    public Result<List<VehicleTrim>> getTrimsByVehicleId(@PathVariable Long vehicleId) {
+        List<VehicleTrim> trims = vehicleTrimService.getTrimsByVehicleId(vehicleId);
+        return Result.success(trims);
+    }
+
+    /**
+     * 新增车辆接口（包含配置）
      */
     @PostMapping("/save")
-    public Result<String> save(@RequestBody Vehicle vehicle) {
+    public Result<String> save(@RequestBody VehicleDetailDTO detailDTO) {
         try {
-            // 🚀 核心修复 1：使用 LocalDateTime.now() 注入当前创建时间
+            Vehicle vehicle = detailDTO.getVehicle();
+            
             if (vehicle.getCreateTime() == null) {
                 vehicle.setCreateTime(LocalDateTime.now());
             }
-
-            // 顺手把更新时间也初始化一下，保持数据规范
             if (vehicle.getUpdateTime() == null) {
                 vehicle.setUpdateTime(LocalDateTime.now());
             }
-
-            // 🚀 核心修复 2：如果前端没传热度，给个初始值 0
             if (vehicle.getHotScore() == null) {
                 vehicle.setHotScore(0);
             }
+            if (vehicle.getStatus() == null) {
+                vehicle.setStatus((byte) 1);
+            }
 
-            // 执行保存
             boolean success = vehicleService.save(vehicle);
-            if (success) {
-                return Result.success("新增车辆成功！");
-            } else {
+            if (!success) {
                 return Result.error("新增失败，请稍后再试");
             }
+
+            // 保存配置
+            List<VehicleTrim> trims = detailDTO.getTrims();
+            if (trims != null && !trims.isEmpty()) {
+                vehicleTrimService.saveTrims(vehicle.getId(), trims);
+                
+                // 更新车辆的价格区间
+                BigDecimal minPrice = null;
+                BigDecimal maxPrice = null;
+                for (VehicleTrim trim : trims) {
+                    if (trim.getPrice() != null) {
+                        if (minPrice == null || trim.getPrice().compareTo(minPrice) < 0) {
+                            minPrice = trim.getPrice();
+                        }
+                        if (maxPrice == null || trim.getPrice().compareTo(maxPrice) > 0) {
+                            maxPrice = trim.getPrice();
+                        }
+                    }
+                }
+                vehicle.setMinPrice(minPrice);
+                vehicle.setMaxPrice(maxPrice);
+                vehicleService.updateById(vehicle);
+            }
+
+            return Result.success("新增车辆成功！");
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("服务器异常：" + e.getMessage());
@@ -115,20 +155,43 @@ public class VehicleController {
     }
 
     /**
-     * 修改车辆接口
+     * 修改车辆接口（包含配置）
      */
     @PostMapping("/update")
-    public Result<String> update(@RequestBody Vehicle vehicle) {
+    public Result<String> update(@RequestBody VehicleDetailDTO detailDTO) {
         try {
-            // 核心：修改时更新updateTime为当前时间
+            Vehicle vehicle = detailDTO.getVehicle();
             vehicle.setUpdateTime(LocalDateTime.now());
-            // MyBatis-Plus 提供的 updateById 方法，会自动根据传入的 id 更新其他非空字段
+
             boolean success = vehicleService.updateById(vehicle);
-            if (success) {
-                return Result.success("修改车辆成功！");
-            } else {
+            if (!success) {
                 return Result.error("修改失败，找不到对应的车辆数据");
             }
+
+            // 保存配置
+            List<VehicleTrim> trims = detailDTO.getTrims();
+            if (trims != null && !trims.isEmpty()) {
+                vehicleTrimService.saveTrims(vehicle.getId(), trims);
+                
+                // 更新车辆的价格区间
+                BigDecimal minPrice = null;
+                BigDecimal maxPrice = null;
+                for (VehicleTrim trim : trims) {
+                    if (trim.getPrice() != null) {
+                        if (minPrice == null || trim.getPrice().compareTo(minPrice) < 0) {
+                            minPrice = trim.getPrice();
+                        }
+                        if (maxPrice == null || trim.getPrice().compareTo(maxPrice) > 0) {
+                            maxPrice = trim.getPrice();
+                        }
+                    }
+                }
+                vehicle.setMinPrice(minPrice);
+                vehicle.setMaxPrice(maxPrice);
+                vehicleService.updateById(vehicle);
+            }
+
+            return Result.success("修改车辆成功！");
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("服务器异常：" + e.getMessage());
@@ -141,8 +204,10 @@ public class VehicleController {
     @DeleteMapping("/delete/{id}")
     public Result<String> delete(@PathVariable Long id) {
         try {
-            // MyBatis-Plus 提供的 removeById 方法
-            // 如果你的 Vehicle 实体类里 is_deleted 字段加了 @TableLogic 注解，这里会自动变成逻辑删除 (UPDATE is_deleted = 1)
+            // 先删除配置
+            vehicleTrimService.removeByVehicleId(id);
+            
+            // 再删除车辆
             boolean success = vehicleService.removeById(id);
             if (success) {
                 return Result.success("删除成功！");
@@ -154,6 +219,4 @@ public class VehicleController {
             return Result.error("服务器异常：" + e.getMessage());
         }
     }
-
-
 }

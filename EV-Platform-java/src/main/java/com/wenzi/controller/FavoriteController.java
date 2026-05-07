@@ -91,7 +91,8 @@ public class FavoriteController {
                     item.put("createTime", favorite.getCreateTime());
                     item.put("vehicleBrand", vehicle.getBrand());
                     item.put("vehicleModel", vehicle.getModel());
-                    item.put("vehiclePrice", vehicle.getPrice());
+                    item.put("minPrice", vehicle.getMinPrice());
+                    item.put("maxPrice", vehicle.getMaxPrice());
                     item.put("vehicleDescription", "续航里程：" + vehicle.getRangeKm() + "km，驱动类型：" + vehicle.getDriveType());
                     item.put("vehicleImage", vehicle.getImageUrl());
                     result.add(item);

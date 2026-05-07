@@ -1,15 +1,13 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Edit, Delete } from '@element-plus/icons-vue'
+import { Plus, Search, Edit, Delete, Plus as PlusIcon, Minus, Van } from '@element-plus/icons-vue'
 import request from '../../utils/request'
 
-// --- 表格与分页数据 ---
 const tableData = ref([])
 const total = ref(0)
 const loading = ref(false)
 
-// 查询参数
 const queryParams = reactive({
   current: 1,
   size: 10,
@@ -17,7 +15,6 @@ const queryParams = reactive({
   isAdmin: true
 })
 
-// --- 获取表格数据 ---
 const fetchVehicles = async () => {
   loading.value = true
   try {
@@ -33,74 +30,104 @@ const fetchVehicles = async () => {
   }
 }
 
-// 搜索触发
 const handleSearch = () => {
-  queryParams.current = 1 // 搜索时回到第一页
+  queryParams.current = 1
   fetchVehicles()
 }
 
-// 分页触发
 const handleCurrentChange = (val) => {
   queryParams.current = val
   fetchVehicles()
 }
 
-// --- 弹窗与表单数据 ---
 const dialogVisible = ref(false)
-const isEdit = ref(false) // 区分是“新增”还是“编辑”
+const trimDialogVisible = ref(false)
+const isEdit = ref(false)
 
 const form = reactive({
   id: null,
   brand: '',
   model: '',
-  price: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
   rangeKm: undefined,
   driveType: '',
-  imageUrl: '', // 🚀 新增图片字段
-  hotScore: 0, // 🚀 新增：热度值字段
+  imageUrl: '',
+  hotScore: 0,
   status: 1
 })
 
-// 表单校验规则
+const trims = ref([
+  { id: null, trimName: '', price: undefined, rangeKm: undefined, batteryCapacity: undefined, motorPower: undefined, maxSpeed: undefined, accelerationTime: undefined, chargeTime: undefined, colors: '', driveType: '', isHot: 0, status: 1 }
+])
+
 const rules = {
   brand: [{ required: true, message: '请输入品牌', trigger: 'blur' }],
   model: [{ required: true, message: '请输入车型', trigger: 'blur' }],
-  price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
   rangeKm: [{ required: true, message: '请输入续航', trigger: 'blur' }]
 }
 
 const formRef = ref(null)
 
-// 打开新增弹窗 (记得把 imageUrl 也清空)
 const openAddDialog = () => {
   isEdit.value = false
-  Object.assign(form, { id: null, brand: '', model: '', price: undefined, rangeKm: undefined, driveType: '', imageUrl: '', hotScore: 0, status: 1 })
+  Object.assign(form, { id: null, brand: '', model: '', minPrice: undefined, maxPrice: undefined, rangeKm: undefined, driveType: '', imageUrl: '', hotScore: 0, status: 1 })
+  trims.value = [{ id: null, trimName: '', price: undefined, rangeKm: undefined, batteryCapacity: undefined, motorPower: undefined, maxSpeed: undefined, accelerationTime: undefined, chargeTime: undefined, colors: '', driveType: '', isHot: 0, status: 1 }]
   dialogVisible.value = true
-  setTimeout(() => formRef.value?.clearValidate(), 0)
+  nextTick(() => formRef.value?.clearValidate())
 }
 
-// 打开编辑弹窗
-const openEditDialog = (row) => {
+const openEditDialog = async (row) => {
   isEdit.value = true
-  // 数据回显（将当前行的数据拷贝到表单中）
   Object.assign(form, row)
+  
+  try {
+    const res = await request.get(`/vehicle/${row.id}`)
+    if (res.code === 200) {
+      trims.value = res.data.trims || [{ id: null, trimName: '', price: undefined, rangeKm: undefined, batteryCapacity: undefined, motorPower: undefined, maxSpeed: undefined, accelerationTime: undefined, chargeTime: undefined, colors: '', driveType: '', isHot: 0, status: 1 }]
+    }
+  } catch (error) {
+    console.error('获取车辆配置失败:', error)
+    trims.value = [{ id: null, trimName: '', price: undefined, rangeKm: undefined, batteryCapacity: undefined, motorPower: undefined, maxSpeed: undefined, accelerationTime: undefined, chargeTime: undefined, colors: '', driveType: '', isHot: 0, status: 1 }]
+  }
+  
   dialogVisible.value = true
 }
 
-// 提交表单 (保存或修改)
+const addTrimRow = () => {
+  trims.value.push({ id: null, trimName: '', price: undefined, rangeKm: undefined, batteryCapacity: undefined, motorPower: undefined, maxSpeed: undefined, accelerationTime: undefined, chargeTime: undefined, colors: '', driveType: '', isHot: 0, status: 1 })
+}
+
+const removeTrimRow = (index) => {
+  if (trims.value.length > 1) {
+    trims.value.splice(index, 1)
+  } else {
+    ElMessage.warning('至少需要保留一个配置')
+  }
+}
+
 const handleSave = () => {
   formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // 判断调用的接口路径
+        const validTrims = trims.value.filter(t => t.trimName && t.price)
+        if (validTrims.length === 0) {
+          ElMessage.warning('请至少添加一个配置版本')
+          return
+        }
+        
+        const data = {
+          vehicle: { ...form },
+          trims: validTrims
+        }
+        
         const url = isEdit.value ? '/vehicle/update' : '/vehicle/save'
-        // 发送 POST 请求
-        const res = await request.post(url, form)
+        const res = await request.post(url, data)
         
         if (res.code === 200) {
           ElMessage.success(isEdit.value ? '修改成功' : '新增成功')
           dialogVisible.value = false
-          fetchVehicles() // 刷新表格
+          fetchVehicles()
         } else {
           ElMessage.error(res.msg || '操作失败')
         }
@@ -112,7 +139,6 @@ const handleSave = () => {
   })
 }
 
-// --- 删除操作 ---
 const handleDelete = (id) => {
   ElMessageBox.confirm('确定要永久删除该车辆数据吗？', '高危操作', {
     confirmButtonText: '确定删除',
@@ -120,7 +146,6 @@ const handleDelete = (id) => {
     type: 'warning',
   }).then(async () => {
     try {
-      // 发送 DELETE 请求
       const res = await request.delete(`/vehicle/delete/${id}`)
       if (res.code === 200) {
         ElMessage.success('删除成功')
@@ -132,11 +157,9 @@ const handleDelete = (id) => {
       console.error(error)
     }
   }).catch(() => {
-    // 取消删除
   })
 }
 
-// 页面加载时获取第一页数据
 onMounted(() => {
   fetchVehicles()
 })
@@ -190,9 +213,19 @@ onMounted(() => {
         </template>
       </el-table-column>
 
-      <el-table-column prop="price" label="指导价(万)" width="120" align="center">
+      <el-table-column label="指导价(万)" width="160" align="center">
         <template #default="scope">
-          <span style="color: #f56c6c; font-weight: bold;">{{ scope.row.price }}</span>
+          <span style="color: #f56c6c; font-weight: bold;">
+            <template v-if="scope.row.minPrice && scope.row.maxPrice">
+              {{ scope.row.minPrice }} - {{ scope.row.maxPrice }}
+            </template>
+            <template v-else-if="scope.row.price">
+              {{ scope.row.price }}
+            </template>
+            <template v-else>
+              -
+            </template>
+          </span>
         </template>
       </el-table-column>
       <el-table-column prop="rangeKm" label="续航(km)" width="100" align="center" />
@@ -228,7 +261,7 @@ onMounted(() => {
     <el-dialog 
       v-model="dialogVisible" 
       :title="isEdit ? '编辑车辆信息' : '新增车辆'" 
-      width="600px"
+      width="800px"
       destroy-on-close
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" style="padding-right: 30px;">
@@ -240,9 +273,17 @@ onMounted(() => {
           <el-input v-model="form.model" placeholder="例：汉EV 创世版" />
         </el-form-item>
         
-        <el-form-item label="指导价格" prop="price">
-          <el-input-number v-model="form.price" :precision="2" :step="0.1" :min="0" style="width: 100%;" />
-          <div class="form-tip">单位：万元</div>
+        <el-form-item label="价格区间" prop="price">
+          <el-row :gutter="10">
+            <el-col :span="11">
+              <el-input-number v-model="form.minPrice" :precision="2" :step="0.1" :min="0" style="width: 100%;" placeholder="最低价格" />
+            </el-col>
+            <el-col :span="2" style="text-align: center; line-height: 40px;">-</el-col>
+            <el-col :span="11">
+              <el-input-number v-model="form.maxPrice" :precision="2" :step="0.1" :min="0" style="width: 100%;" placeholder="最高价格" />
+            </el-col>
+          </el-row>
+          <div class="form-tip">单位：万元（可通过下方配置自动计算）</div>
         </el-form-item>
         
         <el-form-item label="续航里程" prop="rangeKm">
@@ -270,6 +311,66 @@ onMounted(() => {
 
         <el-form-item label="上架状态">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="上架" inactive-text="下架" />
+        </el-form-item>
+
+        <el-form-item label="车型配置（SKU）">
+          <div class="trim-section">
+            <div class="trim-header">
+              <span style="font-weight: bold; display: flex; align-items: center;">
+                <el-icon><Van /></el-icon>
+                配置版本列表
+              </span>
+              <el-button type="primary" size="small" :icon="PlusIcon" @click="addTrimRow">添加配置</el-button>
+            </div>
+            
+            <div v-for="(trim, index) in trims" :key="index" class="trim-row">
+              <div class="trim-index">配置 {{ index + 1 }}</div>
+              <el-row :gutter="10" class="trim-fields">
+                <el-col :span="8">
+                  <el-input v-model="trim.trimName" placeholder="配置名称（如：标准版）" />
+                </el-col>
+                <el-col :span="6">
+                  <el-input-number v-model="trim.price" :precision="2" :step="0.1" :min="0" placeholder="价格(万)" />
+                </el-col>
+                <el-col :span="5">
+                  <el-input-number v-model="trim.rangeKm" :min="0" :step="10" placeholder="续航(km)" />
+                </el-col>
+                <el-col :span="5">
+                  <el-input-number v-model="trim.batteryCapacity" :precision="1" :step="1" :min="0" placeholder="电池(kWh)" />
+                </el-col>
+                <el-col :span="6">
+                  <el-input-number v-model="trim.motorPower" :min="0" :step="10" placeholder="功率(kW)" />
+                </el-col>
+                <el-col :span="4">
+                  <el-input-number v-model="trim.maxSpeed" :min="0" placeholder="最高速" />
+                </el-col>
+                <el-col :span="4">
+                  <el-input-number v-model="trim.accelerationTime" :precision="1" :step="0.1" placeholder="加速(s)" />
+                </el-col>
+                <el-col :span="4">
+                  <el-input-number v-model="trim.chargeTime" :min="0" placeholder="快充(分)" />
+                </el-col>
+                <el-col :span="8">
+                  <el-input v-model="trim.colors" placeholder="颜色（逗号分隔）" />
+                </el-col>
+                <el-col :span="5">
+                  <el-select v-model="trim.driveType" placeholder="驱动方式">
+                    <el-option label="后驱" value="后驱" />
+                    <el-option label="四驱" value="四驱" />
+                  </el-select>
+                </el-col>
+                <el-col :span="4">
+                  <el-select v-model="trim.isHot" placeholder="主推">
+                    <el-option :label="0" :value="0" />
+                    <el-option :label="1" :value="1" />
+                  </el-select>
+                </el-col>
+                <el-col :span="3">
+                  <el-button v-if="trims.length > 1" type="danger" size="small" :icon="Minus" @click="removeTrimRow(index)">删除</el-button>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
         </el-form-item>
       </el-form>
       
@@ -308,5 +409,45 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   margin-left: 10px;
+}
+
+.trim-section {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.trim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #ebeef5;
+}
+
+.trim-row {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.trim-row:last-child {
+  margin-bottom: 0;
+}
+
+.trim-index {
+  font-weight: bold;
+  color: #409eff;
+  margin-bottom: 10px;
+}
+
+.trim-fields {
+  align-items: center;
+}
+
+.trim-fields .el-col {
+  margin-bottom: 5px;
 }
 </style>

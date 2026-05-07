@@ -168,6 +168,11 @@ onMounted(() => {
           {{ scope.row.brand }} {{ scope.row.model }}
         </template>
       </el-table-column>
+      <el-table-column label="配置" width="80">
+        <template #default="scope">
+          {{ scope.row.trimName || '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="预约门店" min-width="160">
         <template #default="scope">
           <span v-if="scope.row.dealerName">

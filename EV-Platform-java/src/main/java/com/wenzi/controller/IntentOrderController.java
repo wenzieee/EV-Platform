@@ -42,6 +42,8 @@ public class IntentOrderController {
             IntentOrder order = new IntentOrder();
             order.setUserId(userId);
             order.setVehicleId(dto.getVehicleId());
+            order.setTrimId(dto.getTrimId());
+            order.setTrimName(dto.getTrimName());
             order.setContactPhone(dto.getPhone());
             if (dto.getDealerIds() != null && !dto.getDealerIds().isEmpty()) {
                 order.setDealerIds(dto.getDealerIds().stream()

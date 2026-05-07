@@ -39,6 +39,14 @@ public class IntentOrder implements Serializable {
     @TableField("vehicle_id")
     private Long vehicleId;
 
+    @ApiModelProperty("意向车型配置ID")
+    @TableField("trim_id")
+    private Long trimId;
+
+    @ApiModelProperty("意向车型配置名称")
+    @TableField("trim_name")
+    private String trimName;
+
     @ApiModelProperty("意向4S店ID列表，逗号分隔")
     @TableField("dealer_id")
     private String dealerIds;
