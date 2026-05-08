@@ -12,6 +12,7 @@ import CommunityView from '../views/CommunityView.vue'
 import AdminLayout from '../views/admin/AdminLayout.vue'
 import AdminVehicle from '../views/admin/AdminVehicle.vue'
 import AdminIntent from '../views/admin/AdminIntent.vue'
+import AdminDealer from '../views/admin/AdminDealer.vue'
 
 // 🚀 核心改动 1：引入两个物理隔离的用户管理页面
 import AdminUserSuper from '../views/admin/AdminUserSuper.vue'
@@ -108,6 +109,11 @@ const router = createRouter({
           path: 'comment-management',
           name: 'adminCommentManagement',
           component: AdminCommentManagement
+        },
+        {
+          path: 'dealer',
+          name: 'adminDealer',
+          component: AdminDealer
         }
       ]
     }

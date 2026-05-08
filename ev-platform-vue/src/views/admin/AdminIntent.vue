@@ -12,7 +12,7 @@ const loading = ref(false)
 // 查询参数
 const queryParams = reactive({
   current: 1,
-  size: 10,
+  size: 5,
   keyword: '' // 用于搜索姓名或手机号
 })
 
@@ -163,12 +163,12 @@ onMounted(() => {
       style="width: 100%; margin-top: 20px;"
     >
       <el-table-column prop="id" label="ID" width="80" align="center" />
-      <el-table-column label="意向车型" min-width="140">
+      <el-table-column label="意向车型" min-width="120">
         <template #default="scope">
           {{ scope.row.brand }} {{ scope.row.model }}
         </template>
       </el-table-column>
-      <el-table-column label="配置" width="80">
+      <el-table-column label="配置" width="100">
         <template #default="scope">
           {{ scope.row.trimName || '-' }}
         </template>
@@ -201,7 +201,7 @@ onMounted(() => {
           <el-tag :type="getStatusTagType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" align="center" fixed="right">
+      <el-table-column label="操作" width="100" align="center" fixed="right">
         <template #default="scope">
           <!-- 待处理状态 -->
           <el-button 

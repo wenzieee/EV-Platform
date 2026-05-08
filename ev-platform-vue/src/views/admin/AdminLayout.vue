@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Van, List, User } from '@element-plus/icons-vue' // 🚀 追加引入 User 图标
+import { Van, List, User, MapLocation } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -69,12 +69,12 @@ onMounted(() => {
         
         <el-menu-item index="/admin/intent">
           <el-icon><List /></el-icon>
-          <span>用户线索(订单)</span>
+          <span>意向订单管理</span>
         </el-menu-item>
 
         <el-menu-item index="/admin/intent-stats">
           <el-icon><List /></el-icon> <!-- 临时使用 List 图标 -->
-          <span>用户线索(订单)统计</span>
+          <span>意向订单统计</span>
         </el-menu-item>
 
         <el-menu-item index="/admin/user">
@@ -94,6 +94,11 @@ onMounted(() => {
         <el-menu-item index="/admin/comment-management">
           <el-icon><List /></el-icon>
           <span>评论管理</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/dealer">
+          <el-icon><MapLocation /></el-icon>
+          <span>4S店管理</span>
         </el-menu-item>
 
       </el-menu>
