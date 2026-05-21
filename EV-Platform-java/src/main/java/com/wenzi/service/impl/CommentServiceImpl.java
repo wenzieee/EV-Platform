@@ -140,13 +140,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         if (commentId == null || userId == null) {
             throw new IllegalArgumentException("删除参数不合法");
         }
-
         // 2. 查询评论是否存在
         Comment comment = commentMapper.selectById(commentId);
         if (comment == null || comment.getStatus() == 0) {
             return false;
         }
-
         // 3. 权限校验：评论作者、帖子作者、管理员可删除
         Post post = postMapper.selectById(comment.getPostId());
         boolean isPostAuthor = post != null && post.getUserId().equals(userId);
@@ -155,17 +153,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         if (!isCommentAuthor && !isPostAuthor && !isAdmin) {
             return false; // 无权限
         }
-
         // 4. 逻辑删除（修改状态）
         comment.setStatus(0);
-        //comment.setUpdateTime(LocalDateTime.now());
         boolean success = commentMapper.updateById(comment) > 0;
-
         // 5. 更新帖子评论数（减1）
         if (success) {
             postService.updateCommentCount(comment.getPostId(), false);
         }
-
         return success;
     }
 

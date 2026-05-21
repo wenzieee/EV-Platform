@@ -1,6 +1,6 @@
 <template>
   <div class="vehicle-stats-container">
-    <h2>在售车辆数据统计</h2>
+    <h2>车辆数据统计</h2>
 
     <el-row :gutter="20">
       <el-col :span="12">

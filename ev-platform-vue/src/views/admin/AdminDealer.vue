@@ -151,7 +151,7 @@ onMounted(() => {
   <div class="admin-container">
     <div class="page-header">
       <div class="header-left">
-        <h2 class="page-title">4S店管理</h2>
+        <h2 class="page-title">经销商管理</h2>
       </div>
       <div class="header-right">
         <el-button type="primary" @click="openAddDialog">新增门店</el-button>

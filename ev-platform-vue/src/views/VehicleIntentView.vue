@@ -25,13 +25,10 @@ const trimName = ref('') // 选中的配置名称
 
 // 表单数据
 const form = reactive({
-  city: '郑州',
   name: '',
   phone: '',
-  selectedDealers: [] // 新增：选中的4S店列表
+  selectedDealers: [] // 选中的4S店列表
 })
-
-const cityOptions = ['北京', '上海', '广州', '深圳', '郑州', '杭州', '成都', '武汉']
 
 // 获取车辆信息
 const fetchVehicle = async () => {
@@ -114,10 +111,9 @@ const handleSubmit = async () => {
       trimId: trimId.value, // 选中的配置ID
       trimName: trimName.value, // 选中的配置名称
       intentType: activeTab.value, // 'price' 或 'testdrive'
-      city: form.city,
       name: form.name,
       phone: form.phone,
-      dealerIds: form.selectedDealers // 新增：选中的4S店ID列表
+      dealerIds: form.selectedDealers // 选中的4S店ID列表
     }
 
     // 🚀 核心：真正调用后端的接口！
@@ -202,12 +198,6 @@ onUnmounted(() => {
 
           <div class="form-area">
             <el-form :model="form" label-width="100px" size="large">
-
-              <el-form-item label="购车城市：">
-                <el-select v-model="form.city" style="width: 320px;">
-                  <el-option v-for="city in cityOptions" :key="city" :label="city" :value="city" />
-                </el-select>
-              </el-form-item>
 
               <el-form-item label="姓 名：" required>
                 <el-input v-model="form.name" placeholder="请填写称呼（如李先生）" style="width: 320px;" />

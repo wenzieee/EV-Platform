@@ -59,7 +59,7 @@ onMounted(() => {
       >
         <el-menu-item index="/admin/vehicle">
           <el-icon><Van /></el-icon>
-          <span>车辆数据管理</span>
+          <span>车辆资源管理</span>
         </el-menu-item>
 
         <el-menu-item index="/admin/vehicle-stats">
@@ -86,6 +86,16 @@ onMounted(() => {
           <span>用户统计</span>
         </el-menu-item>
 
+        <el-menu-item index="/admin/dealer">
+          <el-icon><MapLocation /></el-icon>
+          <span>经销商管理</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/dealer-stats">
+          <el-icon><List /></el-icon>
+          <span>经销商统计</span>
+        </el-menu-item>
+
         <el-menu-item index="/admin/post-management">
           <el-icon><List /></el-icon>
           <span>帖子管理</span>
@@ -94,11 +104,6 @@ onMounted(() => {
         <el-menu-item index="/admin/comment-management">
           <el-icon><List /></el-icon>
           <span>评论管理</span>
-        </el-menu-item>
-
-        <el-menu-item index="/admin/dealer">
-          <el-icon><MapLocation /></el-icon>
-          <span>4S店管理</span>
         </el-menu-item>
 
       </el-menu>

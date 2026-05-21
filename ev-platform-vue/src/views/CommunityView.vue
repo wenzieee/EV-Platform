@@ -243,12 +243,6 @@ onMounted(() => {
         </div>
       </template>
     </el-skeleton>
-
-    <el-tooltip content="发布帖子" placement="left">
-      <div class="fab-btn" @click="router.push('/community/create')">
-        <el-icon :size="24" color="#fff"><MagicStick /></el-icon>
-      </div>
-    </el-tooltip>
   </div>
 </template>
 
@@ -376,27 +370,6 @@ video.post-cover {
 .no-more {
   color: #999;
   font-size: 14px;
-}
-
-/* 右上角悬浮按钮 */
-.fab-btn {
-  position: fixed;
-  right: 40px;
-  top: 80px;
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  background-color: #007aff;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: transform 0.2s;
-  z-index: 99;
-}
-.fab-btn:hover {
-  transform: translateY(-3px);
 }
 
 .post-content :deep(img),

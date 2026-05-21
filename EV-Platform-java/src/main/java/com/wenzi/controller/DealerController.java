@@ -4,11 +4,15 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wenzi.common.Result;
 import com.wenzi.entity.Dealer;
+import com.wenzi.mapper.DealerMapper;
 import com.wenzi.service.IDealerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/dealer")
@@ -16,6 +20,9 @@ public class DealerController {
 
     @Autowired
     private IDealerService dealerService;
+
+    @Autowired
+    private DealerMapper dealerMapper;
 
     /**
      * 获取距离用户最近的品牌4S店
@@ -125,6 +132,81 @@ public class DealerController {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("删除失败");
+        }
+    }
+
+    /**
+     * 获取经销商统计数据
+     */
+    @GetMapping("/stats")
+    public Result<Map<String, Object>> getStats() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+            
+            // 按省份统计
+            List<Map<String, Object>> provinceStats = new ArrayList<>();
+            try {
+                List<com.wenzi.dto.DealerStatsDTO> provinceList = dealerMapper.statsByProvince();
+                for (com.wenzi.dto.DealerStatsDTO item : provinceList) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("province", item.getProvince());
+                    map.put("count", item.getCount());
+                    provinceStats.add(map);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            stats.put("provinceStats", provinceStats);
+            
+            // 按状态统计
+            List<Map<String, Object>> statusStats = new ArrayList<>();
+            try {
+                List<com.wenzi.dto.DealerStatsDTO> statusList = dealerMapper.statsByStatus();
+                for (com.wenzi.dto.DealerStatsDTO item : statusList) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("status", item.getStatus());
+                    map.put("count", item.getCount());
+                    statusStats.add(map);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            stats.put("statusStats", statusStats);
+            
+            // 按品牌统计
+            List<Map<String, Object>> brandStats = new ArrayList<>();
+            try {
+                List<com.wenzi.dto.DealerStatsDTO> brandList = dealerMapper.statsByBrand();
+                for (com.wenzi.dto.DealerStatsDTO item : brandList) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("brand", item.getBrand());
+                    map.put("count", item.getCount());
+                    brandStats.add(map);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            stats.put("brandStats", brandStats);
+            
+            // 按城市统计
+            List<Map<String, Object>> cityStats = new ArrayList<>();
+            try {
+                List<com.wenzi.dto.DealerStatsDTO> cityList = dealerMapper.statsByCity();
+                for (com.wenzi.dto.DealerStatsDTO item : cityList) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("city", item.getCity());
+                    map.put("count", item.getCount());
+                    cityStats.add(map);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            stats.put("cityStats", cityStats);
+            
+            return Result.success(stats);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取统计数据失败");
         }
     }
 }

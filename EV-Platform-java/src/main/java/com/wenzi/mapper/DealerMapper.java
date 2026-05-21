@@ -1,6 +1,7 @@
 package com.wenzi.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.wenzi.dto.DealerStatsDTO;
 import com.wenzi.entity.Dealer;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -22,4 +23,28 @@ public interface DealerMapper extends BaseMapper<Dealer> {
     List<Dealer> findNearestDealers(@Param("userLng") Double userLng,
                                     @Param("userLat") Double userLat,
                                     @Param("brand") String brand);
+
+    /**
+     * 按省份统计经销商数量
+     */
+    @Select("SELECT province, COUNT(*) as count FROM biz_dealer GROUP BY province ORDER BY count DESC")
+    List<DealerStatsDTO> statsByProvince();
+
+    /**
+     * 按状态统计经销商数量
+     */
+    @Select("SELECT status, COUNT(*) as count FROM biz_dealer GROUP BY status")
+    List<DealerStatsDTO> statsByStatus();
+
+    /**
+     * 按品牌统计经销商数量
+     */
+    @Select("SELECT brand, COUNT(*) as count FROM biz_dealer GROUP BY brand ORDER BY count DESC")
+    List<DealerStatsDTO> statsByBrand();
+
+    /**
+     * 按城市统计经销商数量（取前20个城市）
+     */
+    @Select("SELECT city, COUNT(*) as count FROM biz_dealer GROUP BY city ORDER BY count DESC LIMIT 20")
+    List<DealerStatsDTO> statsByCity();
 }

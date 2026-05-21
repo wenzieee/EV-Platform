@@ -20,6 +20,7 @@ import AdminUserNormal from '../views/admin/AdminUserNormal.vue'
 import AdminVehicleStats from '../views/admin/AdminVehicleStats.vue' // 引入车辆数据统计页面
 import AdminIntentStats from '../views/admin/AdminIntentStats.vue' // 引入用户线索(订单)统计页面
 import AdminUserStats from '../views/admin/AdminUserStats.vue' // 引入用户统计页面
+import AdminDealerStats from '../views/admin/AdminDealerStats.vue' // 引入经销商数据统计页面
 import AdminPostManagement from '../views/admin/AdminPostManagement.vue' // 引入帖子管理页面
 import AdminCommentManagement from '../views/admin/AdminCommentManagement.vue' // 引入评论管理页面
 
@@ -114,6 +115,11 @@ const router = createRouter({
           path: 'dealer',
           name: 'adminDealer',
           component: AdminDealer
+        },
+        {
+          path: 'dealer-stats',
+          name: 'adminDealerStats',
+          component: AdminDealerStats
         }
       ]
     }

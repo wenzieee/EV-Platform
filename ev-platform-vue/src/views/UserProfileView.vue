@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Calendar, Star, ChatDotRound, Edit, Delete, ArrowLeft } from '@element-plus/icons-vue'
+import { Calendar, Star, ChatDotRound, Edit, Delete, ArrowLeft, MagicStick } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox, ElTabs, ElTabPane, ElButton, ElSkeleton, ElEmpty } from 'element-plus'
 import request from '../utils/request'
 import { useRouter } from 'vue-router'
@@ -54,11 +54,17 @@ const getCoverMedia = (html) => {
 
 // 3. 封装一个统一的数据处理函数
 const processPosts = (records) => {
-  return records.map(post => ({
-    ...post,
-    coverMedia: getCoverMedia(post.content),
-    snippet: getSnippet(post.content)
-  }))
+  if (!records || !Array.isArray(records)) return []
+
+  // 🚀 核心修复：先过滤掉 null 的幽灵数据，再处理内容
+  return records
+    .filter(post => post !== null && post !== undefined)
+    .map(post => ({
+      ...post,
+      // 加上兜底的空字符串，防止 content 为空时报错
+      coverMedia: getCoverMedia(post.content || ''),
+      snippet: getSnippet(post.content || '')
+    }))
 }
 
 // ====== 获取数据方法 ======
@@ -284,6 +290,9 @@ onMounted(() => {
         <el-icon><ArrowLeft /></el-icon> 返回
       </el-button>
       <h1>创作中心</h1>
+      <el-button type="primary" class="create-btn" @click="router.push('/community/create')">
+        <el-icon><MagicStick /></el-icon> 发布帖子
+      </el-button>
     </div>
 
     <el-tabs v-model="activeTab" @tab-click="handleTabChange" class="profile-tabs">
@@ -366,7 +375,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="load-more" v-if="posts.length < total">
+            <div class="load-more" v-if="pageNum * pageSize < total">
               <el-button text @click="loadMore">加载更多</el-button>
             </div>
             <div class="load-more no-more" v-else-if="posts.length > 0">
@@ -446,7 +455,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="load-more" v-if="likes.length < total">
+           <div class="load-more" v-if="pageNum * pageSize < total">
               <el-button text @click="loadMore">加载更多</el-button>
             </div>
             <div class="load-more no-more" v-else-if="likes.length > 0">
@@ -495,10 +504,10 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="load-more" v-if="comments.length < total">
+            <div class="load-more" v-if="pageNum * pageSize < total">
               <el-button text @click="loadMore">加载更多</el-button>
             </div>
-            <div class="load-more no-more" v-else-if="comments.length > 0">
+            <div class="load-more no-more" v-else-if="likes.length > 0">
               - 到底啦 -
             </div>
           </template>
@@ -575,10 +584,10 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="load-more" v-if="collections.length < total">
+            <div class="load-more" v-if="pageNum * pageSize < total">
               <el-button text @click="loadMore">加载更多</el-button>
             </div>
-            <div class="load-more no-more" v-else-if="collections.length > 0">
+            <div class="load-more no-more" v-else-if="likes.length > 0">
               - 到底啦 -
             </div>
           </template>
@@ -600,6 +609,7 @@ onMounted(() => {
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 20px;
   padding-bottom: 10px;
   border-bottom: 1px solid #eee;
@@ -613,6 +623,12 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 600;
   margin: 0;
+}
+
+.create-btn {
+  border-radius: 4px;
+  background-color: #007aff;
+  border-color: #007aff;
 }
 
 /* 标签页 */
@@ -694,14 +710,19 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* 修改图片/视频封面的样式，完美还原画框效果 */
+/* 图片/视频封面样式 */
 .post-cover {
   width: 100%;
-  height: 250px;
-  object-fit: contain;
+  max-height: 500px;
+  object-fit: cover;
   display: block;
   border-radius: 8px;
-  background-color: #000;
+  background-color: #fff;
+}
+
+video.post-cover {
+  object-fit: cover;
+  background-color: #fff;
 }
 
 /* 缩略文本摘要样式 */

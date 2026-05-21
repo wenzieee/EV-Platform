@@ -1,6 +1,6 @@
 <template>
   <div class="intent-stats-container">
-    <h2>用户线索(订单)统计</h2>
+    <h2>意向订单统计</h2>
 
     <el-row :gutter="20">
       <el-col :span="8">

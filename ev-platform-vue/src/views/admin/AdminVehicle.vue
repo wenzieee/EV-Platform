@@ -325,47 +325,49 @@ onMounted(() => {
             
             <div v-for="(trim, index) in trims" :key="index" class="trim-row">
               <div class="trim-index">配置 {{ index + 1 }}</div>
-              <el-row :gutter="10" class="trim-fields">
-                <el-col :span="8">
-                  <el-input v-model="trim.trimName" placeholder="配置名称（如：标准版）" />
+              <el-row :gutter="15" class="trim-fields">
+                <el-col :span="7">
+                  <el-input v-model="trim.trimName" placeholder="配置名称（例：标准版）" style="width: 100%;" />
                 </el-col>
                 <el-col :span="6">
-                  <el-input-number v-model="trim.price" :precision="2" :step="0.1" :min="0" placeholder="价格(万)" />
+                  <el-input-number v-model="trim.price" :precision="2" :step="0.1" :min="0" placeholder="价格(万)" controls-position="right" style="width: 100%;" />
                 </el-col>
                 <el-col :span="5">
-                  <el-input-number v-model="trim.rangeKm" :min="0" :step="10" placeholder="续航(km)" />
-                </el-col>
-                <el-col :span="5">
-                  <el-input-number v-model="trim.batteryCapacity" :precision="1" :step="1" :min="0" placeholder="电池(kWh)" />
+                  <el-input-number v-model="trim.rangeKm" :min="0" :step="10" placeholder="续航(km)" controls-position="right" style="width: 100%;" />
                 </el-col>
                 <el-col :span="6">
-                  <el-input-number v-model="trim.motorPower" :min="0" :step="10" placeholder="功率(kW)" />
+                  <el-input-number v-model="trim.batteryCapacity" :precision="1" :step="1" :min="0" placeholder="电池(kWh)" controls-position="right" style="width: 100%;" />
                 </el-col>
-                <el-col :span="4">
-                  <el-input-number v-model="trim.maxSpeed" :min="0" placeholder="最高速" />
+
+                <el-col :span="6">
+                  <el-input-number v-model="trim.motorPower" :min="0" :step="10" placeholder="功率(kW)" controls-position="right" style="width: 100%;" />
                 </el-col>
-                <el-col :span="4">
-                  <el-input-number v-model="trim.accelerationTime" :precision="1" :step="0.1" placeholder="加速(s)" />
+                <el-col :span="6">
+                  <el-input-number v-model="trim.maxSpeed" :min="0" placeholder="最高速" controls-position="right" style="width: 100%;" />
                 </el-col>
-                <el-col :span="4">
-                  <el-input-number v-model="trim.chargeTime" :min="0" placeholder="快充(分)" />
+                <el-col :span="6">
+                  <el-input-number v-model="trim.accelerationTime" :precision="1" :step="0.1" placeholder="加速(s)" controls-position="right" style="width: 100%;" />
                 </el-col>
+                <el-col :span="6">
+                  <el-input-number v-model="trim.chargeTime" :min="0" placeholder="快充(分)" controls-position="right" style="width: 100%;" />
+                </el-col>
+
                 <el-col :span="8">
-                  <el-input v-model="trim.colors" placeholder="颜色（逗号分隔）" />
+                  <el-input v-model="trim.colors" placeholder="颜色（逗号分隔）" style="width: 100%;" />
                 </el-col>
-                <el-col :span="5">
-                  <el-select v-model="trim.driveType" placeholder="驱动方式">
+                <el-col :span="6">
+                  <el-select v-model="trim.driveType" placeholder="驱动方式" style="width: 100%;">
                     <el-option label="后驱" value="后驱" />
                     <el-option label="四驱" value="四驱" />
                   </el-select>
                 </el-col>
-                <el-col :span="4">
-                  <el-select v-model="trim.isHot" placeholder="主推">
-                    <el-option :label="0" :value="0" />
-                    <el-option :label="1" :value="1" />
+                <el-col :span="6">
+                  <el-select v-model="trim.isHot" placeholder="是否主推" style="width: 100%;">
+                    <el-option :label="'普通'" :value="0" />
+                    <el-option :label="'主推'" :value="1" />
                   </el-select>
                 </el-col>
-                <el-col :span="3">
+                <el-col :span="4" style="display: flex; align-items: center; justify-content: flex-end;">
                   <el-button v-if="trims.length > 1" type="danger" size="small" :icon="Minus" @click="removeTrimRow(index)">删除</el-button>
                 </el-col>
               </el-row>
@@ -427,8 +429,8 @@ onMounted(() => {
 }
 
 .trim-row {
-  margin-bottom: 15px;
-  padding: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
   background: #fafafa;
   border-radius: 6px;
 }
@@ -440,7 +442,7 @@ onMounted(() => {
 .trim-index {
   font-weight: bold;
   color: #409eff;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .trim-fields {
@@ -448,6 +450,10 @@ onMounted(() => {
 }
 
 .trim-fields .el-col {
+  margin-bottom: 10px;
+}
+
+.trim-fields .el-row {
   margin-bottom: 5px;
 }
 </style>

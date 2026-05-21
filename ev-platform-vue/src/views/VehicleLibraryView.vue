@@ -102,16 +102,16 @@ onMounted(() => {
 
 <template>
   <div class="library-container">
-    
+
     <div class="filter-card">
       <h3 class="filter-title">选车条件</h3>
-      
+
       <div class="filter-row">
         <div class="filter-label">价格：</div>
         <div class="filter-options">
           <span :class="['option-item', { active: activePriceLabel === '' }]" @click="selectPrice('')">不限</span>
-          <span 
-            v-for="(item, index) in priceOptions" 
+          <span
+            v-for="(item, index) in priceOptions"
             :key="index"
             :class="['option-item', { active: activePriceLabel === item.label }]"
             @click="selectPrice(item)"
@@ -125,8 +125,8 @@ onMounted(() => {
         <div class="filter-label">驱动：</div>
         <div class="filter-options">
           <span :class="['option-item', { active: activeDriveType === '' }]" @click="selectDriveType('')">不限</span>
-          <span 
-            v-for="type in driveTypeOptions" 
+          <span
+            v-for="type in driveTypeOptions"
             :key="type"
             :class="['option-item', { active: activeDriveType === type }]"
             @click="selectDriveType(type)"
@@ -140,8 +140,8 @@ onMounted(() => {
         <div class="filter-label">品牌：</div>
         <div class="filter-options">
           <span :class="['option-item', { active: activeBrand === '' }]" @click="selectBrand('')">不限</span>
-          <span 
-            v-for="brand in brandOptions" 
+          <span
+            v-for="brand in brandOptions"
             :key="brand"
             :class="['option-item', { active: activeBrand === brand }]"
             @click="selectBrand(brand)"
