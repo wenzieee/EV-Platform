@@ -30,10 +30,11 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import request from '../../utils/request';
 import * as echarts from 'echarts';
-
+// 图表引用
 const brandChart = ref(null);
 const modelChart = ref(null);
 const statusChart = ref(null);
+// 图表实例
 let brandChartInstance = null;
 let modelChartInstance = null;
 let statusChartInstance = null;
@@ -44,7 +45,7 @@ const fetchIntentStats = async () => {
     if (res.code === 200) {
       const { brandStats, modelStats, statusStats } = res.data;
 
-      // Render brand stats bar chart
+      // Render brand stats bar chart  渲染品牌统计柱状图
       if (brandChartInstance) {
         const brandNames = brandStats.map(item => item.brand);
         const brandCounts = brandStats.map(item => item.count);
@@ -54,7 +55,7 @@ const fetchIntentStats = async () => {
         });
       }
 
-      // Render model stats bar chart
+      // Render model stats bar chart  渲染车型统计柱状图
       if (modelChartInstance) {
         const modelNames = modelStats.map(item => item.model);
         const modelCounts = modelStats.map(item => item.count);
@@ -64,7 +65,7 @@ const fetchIntentStats = async () => {
         });
       }
 
-      // Render status pie chart
+      // Render status pie chart  渲染状态统计饼图
       if (statusChartInstance) {
         const pieData = statusStats.map(item => ({
           name: item.statusText, // 使用 statusText 作为名称
@@ -84,7 +85,7 @@ const fetchIntentStats = async () => {
 };
 
 onMounted(() => {
-  // Initialize brand stats bar chart
+  // Initialize brand stats bar chart  初始化品牌统计柱状图
   brandChartInstance = echarts.init(brandChart.value);
   brandChartInstance.setOption({
     tooltip: { trigger: 'axis' },
@@ -93,7 +94,7 @@ onMounted(() => {
     series: [{ name: '线索数量', type: 'bar', itemStyle: { color: '#5470C6' } }],
   });
 
-  // Initialize model stats bar chart
+  // Initialize model stats bar chart   初始化车型统计柱状图（类似配置）
   modelChartInstance = echarts.init(modelChart.value);
   modelChartInstance.setOption({
     tooltip: { trigger: 'axis' },
@@ -102,7 +103,7 @@ onMounted(() => {
     series: [{ name: '线索数量', type: 'bar', itemStyle: { color: '#91CC75' } }],
   });
 
-  // Initialize status pie chart
+  // Initialize status pie chart   初始化状态统计饼图
   statusChartInstance = echarts.init(statusChart.value);
   statusChartInstance.setOption({
     tooltip: { trigger: 'item' },
